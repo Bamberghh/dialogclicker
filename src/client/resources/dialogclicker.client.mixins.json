@@ -1,0 +1,14 @@
+{
+	"required": true,
+	"package": "me.bamberghh.dialogclicker.client.mixin",
+	"compatibilityLevel": "JAVA_25",
+	"client": [
+      "DialogScreenMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	},
+	"overwrites": {
+		"requireAnnotations": true
+	}
+}
