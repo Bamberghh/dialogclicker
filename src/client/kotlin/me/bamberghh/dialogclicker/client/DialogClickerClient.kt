@@ -3,7 +3,6 @@ package me.bamberghh.dialogclicker.client
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import me.bamberghh.dialogclicker.DialogClicker
-import me.bamberghh.dialogclicker.client.DialogClickerClient.actionsFile
 import me.bamberghh.dialogclicker.mapPairListCodec
 import net.fabricmc.api.ClientModInitializer
 import net.minecraft.client.Minecraft
@@ -82,7 +81,7 @@ object DialogClickerClient : ClientModInitializer {
 		val actionsFile = modDirectory.resolve("actions.nbt")
 		this.modDirectory = modDirectory
 		this.actionsFile = actionsFile
-		rememberedActionsRoot = RememberedActionsRoot.load(actionsFile);
+		rememberedActionsRoot = RememberedActionsRoot.load(actionsFile)
 	}
 
 	private fun getRememberedActions(minecraft: Minecraft): MutableMap<Component, RememberedAction>? {

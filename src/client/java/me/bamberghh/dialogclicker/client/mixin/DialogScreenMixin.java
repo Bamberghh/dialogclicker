@@ -34,6 +34,8 @@ public abstract class DialogScreenMixin<T extends Dialog> extends Screen {
 	public abstract void runAction(Optional<ClickEvent> closeAction, DialogAction afterAction);
 
 	@Unique
+	private boolean triedLoadingAction = false;
+	@Unique
 	private Checkbox rememberCheckbox;
 	@Unique
 	private boolean shouldRememberAction = false;
@@ -66,11 +68,14 @@ public abstract class DialogScreenMixin<T extends Dialog> extends Screen {
 	@Inject(method = "init", at = @At("RETURN"))
 	private void init(CallbackInfo info) {
 		createRememberButton();
-		Component externalTitle = dialog.common().computeExternalTitle();
-		final var action = DialogClickerClient.INSTANCE.loadAction(minecraft, externalTitle);
-		DialogClicker.LOGGER.info("loadAction {}", action);
-		if (action != null) {
-			runAction(action.closeAction(), action.afterAction());
+		if (!triedLoadingAction) {
+			triedLoadingAction = true;
+			Component externalTitle = dialog.common().computeExternalTitle();
+			final var action = DialogClickerClient.INSTANCE.loadAction(minecraft, externalTitle);
+			DialogClicker.LOGGER.info("loadAction {}", action);
+			if (action != null) {
+				runAction(action.closeAction(), action.afterAction());
+			}
 		}
 	}
 
