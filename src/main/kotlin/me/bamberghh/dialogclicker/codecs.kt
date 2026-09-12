@@ -7,36 +7,26 @@ import com.mojang.datafixers.util.Pair
 import java.util.Objects
 import java.util.Optional
 import java.util.stream.Collectors
+import java.util.stream.Stream
 
 class PairListCodec<F, S>(private val firstCodec: Codec<F>, private val secondCodec: Codec<S>) :
     Codec<Pair<F, S>> {
-    override fun <T> decode(ops: DynamicOps<T>, input: T): DataResult<Pair<Pair<F, S>, T>> {
-        return ops.getStream(input).flatMap { stream ->
-            val list = stream.limit(3).collect(Collectors.toList())
-            if (list.size != 2) {
-                return@flatMap DataResult.error { "expected list of size 2" }
+    override fun <T> decode(ops: DynamicOps<T>, input: T): DataResult<Pair<Pair<F, S>, T>> =
+        ops.getStream(input).map(Stream<T>::toList).flatMap {
+            if (it.size != 2) DataResult.error { "expected list of size 2" } else {
+                firstCodec.decode(ops, it[0]).flatMap { first ->
+                    secondCodec.decode(ops, it[1]).map { second ->
+                        Pair.of(Pair.of(first.first, second.first), input)
+                    }
+                }
             }
-            val firstAny = list[0]
-            val firstResult = firstCodec.decode(ops, firstAny)
-            if (firstResult is DataResult.Error) {
-                return@flatMap DataResult.Error(firstResult.messageSupplier, Optional.empty(), firstResult.lifecycle)
-            }
-            val secondAny = list[1]
-            val secondResult = secondCodec.decode(ops, secondAny)
-            if (secondResult is DataResult.Error) {
-                return@flatMap DataResult.Error(secondResult.messageSupplier, Optional.empty(), secondResult.lifecycle)
-            }
-            val pair = Pair.of(firstResult.result().get().first, secondResult.result().get().first)
-            DataResult.success(Pair.of(pair, input))
         }
-    }
 
-    override fun <T> encode(input: Pair<F, S>, ops: DynamicOps<T>, prefix: T): DataResult<T> {
-        val listBuilder = ops.listBuilder()
-        listBuilder.add(firstCodec.encodeStart<T>(ops, input.first))
-        listBuilder.add(secondCodec.encodeStart<T>(ops, input.second))
-        return listBuilder.build(prefix)
-    }
+    override fun <T> encode(input: Pair<F, S>, ops: DynamicOps<T>, prefix: T): DataResult<T> =
+        ops.listBuilder()
+            .add(firstCodec.encodeStart(ops, input.first))
+            .add(secondCodec.encodeStart(ops, input.second))
+            .build(prefix)
 
     override fun equals(other: Any?): Boolean {
         if (this === other) {
