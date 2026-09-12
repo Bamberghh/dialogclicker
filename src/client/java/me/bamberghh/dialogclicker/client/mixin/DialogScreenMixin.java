@@ -23,6 +23,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.Optional;
 
+@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 @Mixin(DialogScreen.class)
 public abstract class DialogScreenMixin<T extends Dialog> extends Screen {
 	@Shadow
@@ -74,7 +75,7 @@ public abstract class DialogScreenMixin<T extends Dialog> extends Screen {
 	}
 
 	@Inject(method = "runAction(Ljava/util/Optional;Lnet/minecraft/server/dialog/DialogAction;)V", at = @At("HEAD"))
-	private void runActionMixin(Optional<ClickEvent> closeAction, DialogAction afterAction, CallbackInfo ci) {
+	private void runActionMixin(@SuppressWarnings("OptionalUsedAsFieldOrParameterType") Optional<ClickEvent> closeAction, DialogAction afterAction, CallbackInfo ci) {
 		if (!shouldRememberAction) {
 			return;
 		}
