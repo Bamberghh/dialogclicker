@@ -1,9 +1,12 @@
 package me.bamberghh.dialogclicker
 
+import eu.midnightdust.lib.config.MidnightConfig
+import me.bamberghh.dialogclicker.config.DialogClickerConfig
 import net.fabricmc.api.ModInitializer
 import net.minecraft.resources.Identifier
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+//import me.bamberghh.dialogclicker.config.DialogClickerConfig
 
 object DialogClicker : ModInitializer {
 	const val MOD_ID: String = "dialogclicker"
@@ -11,12 +14,11 @@ object DialogClicker : ModInitializer {
 	@JvmField
     val LOGGER: Logger = LoggerFactory.getLogger(MOD_ID)
 
-	override fun onInitialize() {
-		// This code runs as soon as Minecraft is in a mod-load-ready state.
-		// However, some things (like resources) may still be uninitialized.
-		// Proceed with mild caution.
+	@JvmField
+	val CONFIG: DialogClickerConfig = DialogClickerConfig()
 
-		LOGGER.info("Hello Fabric world!")
+	override fun onInitialize() {
+		MidnightConfig.init(MOD_ID, DialogClickerConfig::class.java)
 	}
 
 	fun id(path: String): Identifier

@@ -2,7 +2,9 @@ package me.bamberghh.dialogclicker.client.mixin;
 
 import com.mojang.serialization.JsonOps;
 import me.bamberghh.dialogclicker.DialogClicker;
+import me.bamberghh.dialogclicker.config.DialogClickerConfig;
 import net.minecraft.core.Holder;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.protocol.common.ClientCommonPacketListener;
 import net.minecraft.network.protocol.common.ClientboundShowDialogPacket;
 import net.minecraft.server.dialog.Dialog;
@@ -19,19 +21,23 @@ public class ClientboundShowDialogPacketMixin {
     @Final
     private Holder<Dialog> dialog;
 
-    @Inject(method = "Lnet/minecraft/network/protocol/common/ClientboundShowDialogPacket;handle(Lnet/minecraft/network/protocol/common/ClientCommonPacketListener;)V", at = @At("HEAD"))
+    @Inject(method = "handle(Lnet/minecraft/network/protocol/common/ClientCommonPacketListener;)V", at = @At("HEAD"))
     private void handle(ClientCommonPacketListener listener, CallbackInfo ci) {
-//        final var tagResult = Dialog.CODEC.encodeStart(NbtOps.INSTANCE, dialog);
-//        if (tagResult.isError()) {
-//            return;
-//        }
-//        final var tag = tagResult.result().get();
-        // TODO: only print this if enabled in config
-        final var tagResult = Dialog.CODEC.encodeStart(JsonOps.INSTANCE, dialog);
-        if (tagResult.result().isEmpty()) {
-            return;
+        if (DialogClickerConfig.printReceivedDialogSNBT) {
+            final var tagResult = Dialog.CODEC.encodeStart(NbtOps.INSTANCE, dialog);
+            if (tagResult.result().isEmpty()) {
+                return;
+            }
+            final var tag = tagResult.result().get();
+            DialogClicker.LOGGER.info("Received dialog SNBT: {}", tag);
         }
-        final var tag = tagResult.result().get();
-        DialogClicker.LOGGER.info("ClientboundShowDialogPacketMixin: {}", tag);
+        if (DialogClickerConfig.printReceivedDialogJSON) {
+            final var tagResult = Dialog.CODEC.encodeStart(JsonOps.INSTANCE, dialog);
+            if (tagResult.result().isEmpty()) {
+                return;
+            }
+            final var tag = tagResult.result().get();
+            DialogClicker.LOGGER.info("Received dialog JSON: {}", tag);
+        }
     }
 }

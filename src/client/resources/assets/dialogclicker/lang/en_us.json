@@ -1,4 +1,8 @@
 {
   "menu.dialogclicker.button_remember": "Remember",
-  "menu.dialogclicker.button_remember.tooltip": "Remember the actions that you perform in this dialog"
+  "menu.dialogclicker.button_remember.tooltip": "Remember the actions that you perform in this dialog",
+
+  "dialogclicker.midnightconfig.title": "Dialog Clicker Config",
+  "dialogclicker.midnightconfig.printReceivedDialogSNBT": "Print received dialog SNBT",
+  "dialogclicker.midnightconfig.printReceivedDialogJSON": "Print received dialog JSON"
 }

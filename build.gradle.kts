@@ -12,6 +12,33 @@ repositories {
 	// Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
 	// See https://docs.gradle.org/current/userguide/declaring_repositories.html
 	// for more information about repositories.
+	maven {
+		url = uri("https://maven.terraformersmc.com/")
+		content {
+			includeGroup("com.terraformersmc")
+		}
+	}
+	maven {
+		url = uri("https://maven.wispforest.io/releases/")
+		content {
+			@Suppress("UnstableApiUsage")
+			includeGroupAndSubgroups("io.wispforest")
+		}
+	}
+	maven {
+		url = uri("https://jitpack.io")
+		content {
+			@Suppress("UnstableApiUsage")
+			includeGroupAndSubgroups("com.github.kdl-org")
+		}
+	}
+	maven {
+		url = uri("https://maven.midnightdust.eu/releases")
+		content {
+			@Suppress("UnstableApiUsage")
+			includeGroupAndSubgroups("eu.midnightdust")
+		}
+	}
 }
 
 loom {
@@ -27,12 +54,16 @@ loom {
 
 dependencies {
 	// To change the versions see the gradle.properties file
-	minecraft("com.mojang:minecraft:${providers.gradleProperty("minecraft_version").get()}")
-	implementation("net.fabricmc:fabric-loader:${providers.gradleProperty("loader_version").get()}")
+	minecraft("com.mojang:minecraft:${properties["minecraft_version"]}")
+	implementation("net.fabricmc:fabric-loader:${properties["loader_version"]}")
 
 	// Fabric API. This is technically optional, but you probably want it anyway.
-	implementation("net.fabricmc.fabric-api:fabric-api:${providers.gradleProperty("fabric_api_version").get()}")
-    implementation("net.fabricmc:fabric-language-kotlin:${providers.gradleProperty("fabric_kotlin_version").get()}")
+	implementation("net.fabricmc.fabric-api:fabric-api:${properties["fabric_api_version"]}")
+    implementation("net.fabricmc:fabric-language-kotlin:${properties["fabric_kotlin_version"]}")
+
+	val midnightlib = "eu.midnightdust:midnightlib:${properties["midnightlib_version"]}"
+	implementation(midnightlib)
+	include(midnightlib)
 }
 
 tasks.processResources {
