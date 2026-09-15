@@ -23,7 +23,7 @@ public class ClientboundShowDialogPacketMixin {
 
     @Inject(method = "handle(Lnet/minecraft/network/protocol/common/ClientCommonPacketListener;)V", at = @At("HEAD"))
     private void handle(ClientCommonPacketListener listener, CallbackInfo ci) {
-        if (DialogClickerConfig.printReceivedDialogSNBT) {
+        if (DialogClickerConfig.isModEnabled && DialogClickerConfig.shouldPrintReceivedDialogSNBT) {
             final var tagResult = Dialog.CODEC.encodeStart(NbtOps.INSTANCE, dialog);
             if (tagResult.result().isEmpty()) {
                 return;
@@ -31,7 +31,7 @@ public class ClientboundShowDialogPacketMixin {
             final var tag = tagResult.result().get();
             DialogClicker.LOGGER.info("Received dialog SNBT: {}", tag);
         }
-        if (DialogClickerConfig.printReceivedDialogJSON) {
+        if (DialogClickerConfig.isModEnabled && DialogClickerConfig.shouldPrintReceivedDialogJSON) {
             final var tagResult = Dialog.CODEC.encodeStart(JsonOps.INSTANCE, dialog);
             if (tagResult.result().isEmpty()) {
                 return;

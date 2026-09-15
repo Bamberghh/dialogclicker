@@ -1,8 +1,12 @@
 {
-  "menu.dialogclicker.button_remember": "Remember",
-  "menu.dialogclicker.button_remember.tooltip": "Remember the actions that you perform in this dialog",
+  "dialogclicker.menu.button_save": "Save actions",
+  "dialogclicker.menu.button_save.tooltip": "Save the actions that you perform in this dialog",
+  "dialogclicker.menu.button_erase": "Forget actions",
+  "dialogclicker.menu.button_erase.tooltip": "Forget the saved & current actions that you performed in this dialog",
 
   "dialogclicker.midnightconfig.title": "Dialog Clicker Config",
-  "dialogclicker.midnightconfig.printReceivedDialogSNBT": "Print received dialog SNBT",
-  "dialogclicker.midnightconfig.printReceivedDialogJSON": "Print received dialog JSON"
+  "dialogclicker.midnightconfig.isModEnabled": "Is mod enabled",
+  "dialogclicker.midnightconfig.shouldApplySavedActions": "Should apply saved actions",
+  "dialogclicker.midnightconfig.shouldPrintReceivedDialogSNBT": "Should print received dialog SNBT",
+  "dialogclicker.midnightconfig.shouldPrintReceivedDialogJSON": "Should print received dialog JSON"
 }

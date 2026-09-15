@@ -3,7 +3,7 @@ package me.bamberghh.dialogclicker.client
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import me.bamberghh.dialogclicker.DialogClicker
-import me.bamberghh.dialogclicker.mapPairListCodec
+import me.bamberghh.dialogclicker.mapPairListListCodec
 import net.fabricmc.api.ClientModInitializer
 import net.minecraft.client.Minecraft
 import net.minecraft.nbt.CompoundTag
@@ -17,45 +17,47 @@ import net.minecraft.server.dialog.DialogAction
 import java.io.File
 import java.nio.file.NoSuchFileException
 import java.util.*
-import kotlin.collections.toMutableMap
 
 @JvmRecord
-data class RememberedAction(val closeAction: Optional<ClickEvent>, val afterAction: DialogAction) {
+data class SavedAction(val closeAction: Optional<ClickEvent>, val afterAction: DialogAction) {
 	companion object {
-		val CODEC = RecordCodecBuilder.create<RememberedAction> { i -> i.group(
-			ClickEvent.CODEC.optionalFieldOf("closeAction").forGetter(RememberedAction::closeAction),
-			DialogAction.CODEC.fieldOf("afterAction").forGetter(RememberedAction::afterAction)
-		).apply(i, ::RememberedAction)
+		val CODEC = RecordCodecBuilder.create<SavedAction> { i -> i.group(
+			ClickEvent.CODEC.optionalFieldOf("closeAction").forGetter(SavedAction::closeAction),
+			DialogAction.CODEC.fieldOf("afterAction").forGetter(SavedAction::afterAction)
+		).apply(i, ::SavedAction)
 		}
 	}
 }
 
-typealias RememberedActionsForType = MutableMap<String, MutableMap<Component, RememberedAction>>
+typealias SavedActionsForType = MutableMap<String, MutableMap<Component, MutableList<SavedAction>>>
 
-class RememberedActionsRoot private constructor(
-	val world: RememberedActionsForType,
-	val server: RememberedActionsForType,
+class SavedActionsRoot private constructor(
+	val world: SavedActionsForType,
+	val server: SavedActionsForType,
 ) {
 	companion object {
-		val FOR_TYPE_CODEC: Codec<RememberedActionsForType> = run {
-			val rememberedActionsCodec = mapPairListCodec(ComponentSerialization.CODEC, RememberedAction.CODEC)
-			Codec.unboundedMap(Codec.STRING, rememberedActionsCodec).xmap(
-				{ map -> map.toMutableMap() },
+		val FOR_TYPE_CODEC: Codec<SavedActionsForType> = run {
+			val savedActionsCodec = mapPairListListCodec(
+				ComponentSerialization.CODEC,
+				SavedAction.CODEC
+			)
+			Codec.unboundedMap(Codec.STRING, savedActionsCodec).xmap(
+				{ map -> HashMap(map) },
 				{ map -> map }
 			)
 		}
 
-		val CODEC = RecordCodecBuilder.create<RememberedActionsRoot> { i -> i.group(
-			FOR_TYPE_CODEC.fieldOf("world").forGetter(RememberedActionsRoot::world),
-			FOR_TYPE_CODEC.fieldOf("server").forGetter(RememberedActionsRoot::server)
-		).apply(i, ::RememberedActionsRoot)
+		val CODEC = RecordCodecBuilder.create<SavedActionsRoot> { i -> i.group(
+			FOR_TYPE_CODEC.fieldOf("world").forGetter(SavedActionsRoot::world),
+			FOR_TYPE_CODEC.fieldOf("server").forGetter(SavedActionsRoot::server)
+		).apply(i, ::SavedActionsRoot)
 		}
 
-		fun load(file: File): RememberedActionsRoot {
+		fun load(file: File): SavedActionsRoot {
 			val nbt = try {
 				NbtIo.readCompressed(file.toPath(), NbtAccounter.defaultQuota())
 			} catch (_: NoSuchFileException) {
-				return RememberedActionsRoot(HashMap(), HashMap())
+				return SavedActionsRoot(HashMap(), HashMap())
 			}
 			val result = CODEC.decode(NbtOps.INSTANCE, nbt)
 			return result.orThrow.first
@@ -71,7 +73,7 @@ class RememberedActionsRoot private constructor(
 }
 
 object DialogClickerClient : ClientModInitializer {
-	var rememberedActionsRoot: RememberedActionsRoot? = null
+	var savedActionsRoot: SavedActionsRoot? = null
 	var modDirectory: File? = null
 	var actionsFile: File? = null
 
@@ -81,14 +83,14 @@ object DialogClickerClient : ClientModInitializer {
 		val actionsFile = modDirectory.resolve("actions.nbt")
 		this.modDirectory = modDirectory
 		this.actionsFile = actionsFile
-		rememberedActionsRoot = RememberedActionsRoot.load(actionsFile)
+		savedActionsRoot = SavedActionsRoot.load(actionsFile)
 	}
 
-	private fun getRememberedActions(minecraft: Minecraft): MutableMap<Component, RememberedAction>? {
-		val rememberedActionsRoot = rememberedActionsRoot!!
+	private fun getSavedActionsAndKeyForType(minecraft: Minecraft): Pair<SavedActionsForType, String>? {
+		val savedActionsRoot = savedActionsRoot!!
 		val currentServer = minecraft.currentServer
 		return if (currentServer != null) {
-			rememberedActionsRoot.server.computeIfAbsent(currentServer.ip) { HashMap() }
+			Pair(savedActionsRoot.server, currentServer.ip)
 		} else {
 			val integratedServer = minecraft.singleplayerServer
 			if (integratedServer == null) {
@@ -96,19 +98,33 @@ object DialogClickerClient : ClientModInitializer {
 				return null
 			}
 			val levelName = integratedServer.worldData.levelName
-			rememberedActionsRoot.world.computeIfAbsent(levelName) { HashMap() }
+			Pair(savedActionsRoot.world, levelName)
 		}
 	}
 
-	fun saveAction(minecraft: Minecraft, externalTitle: Component, action: RememberedAction) {
-        val rememberedActions = getRememberedActions(minecraft) ?: return
-		rememberedActions[externalTitle] = action
-		DialogClicker.LOGGER.info("saveAction {}", rememberedActions)
-		rememberedActionsRoot!!.save(modDirectory!!, actionsFile!!)
+	private fun getSavedActions(minecraft: Minecraft): MutableMap<Component, List<SavedAction>>? {
+		val (savedActionsForType, key) = getSavedActionsAndKeyForType(minecraft) ?: return null
+		@Suppress("UNCHECKED_CAST")
+		return savedActionsForType.computeIfAbsent(key) { HashMap() } as MutableMap<Component, List<SavedAction>>?
 	}
 
-	fun loadAction(minecraft: Minecraft, externalTitle: Component): RememberedAction? {
-		val rememberedActions = getRememberedActions(minecraft) ?: return null
-		return rememberedActions[externalTitle]
+	fun saveActions(minecraft: Minecraft, externalTitle: Component, action: List<SavedAction>?) {
+        val savedActions = getSavedActions(minecraft) ?: return
+		if (action != null) {
+			savedActions[externalTitle] = action
+		} else {
+			savedActions.remove(externalTitle)
+			if (savedActions.isEmpty()) {
+				val (savedActionsForType, key) = getSavedActionsAndKeyForType(minecraft) ?: return
+				savedActionsForType.remove(key)
+			}
+		}
+		DialogClicker.LOGGER.info("saveActions {}", savedActions)
+		savedActionsRoot!!.save(modDirectory!!, actionsFile!!)
+	}
+
+	fun loadActions(minecraft: Minecraft, externalTitle: Component): List<SavedAction>? {
+		val savedActions = getSavedActions(minecraft) ?: return null
+		return savedActions[externalTitle]
 	}
 }
