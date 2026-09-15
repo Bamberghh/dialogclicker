@@ -108,10 +108,10 @@ object DialogClickerClient : ClientModInitializer {
 		return savedActionsForType.computeIfAbsent(key) { HashMap() } as MutableMap<Component, List<SavedAction>>?
 	}
 
-	fun saveActions(minecraft: Minecraft, externalTitle: Component, action: List<SavedAction>?) {
+	fun saveActions(minecraft: Minecraft, externalTitle: Component, actions: List<SavedAction>) {
         val savedActions = getSavedActions(minecraft) ?: return
-		if (action != null) {
-			savedActions[externalTitle] = action
+		if (!actions.isEmpty()) {
+			savedActions[externalTitle] = actions
 		} else {
 			savedActions.remove(externalTitle)
 			if (savedActions.isEmpty()) {
@@ -123,8 +123,7 @@ object DialogClickerClient : ClientModInitializer {
 		savedActionsRoot!!.save(modDirectory!!, actionsFile!!)
 	}
 
-	fun loadActions(minecraft: Minecraft, externalTitle: Component): List<SavedAction>? {
-		val savedActions = getSavedActions(minecraft) ?: return null
-		return savedActions[externalTitle]
+	fun loadActions(minecraft: Minecraft, externalTitle: Component): List<SavedAction> {
+		return getSavedActions(minecraft)?.get(externalTitle) ?: return listOf()
 	}
 }

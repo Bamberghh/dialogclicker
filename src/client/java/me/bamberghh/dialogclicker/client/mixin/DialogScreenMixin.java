@@ -14,6 +14,7 @@ import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.dialog.Dialog;
 import net.minecraft.server.dialog.DialogAction;
+import org.jspecify.annotations.NonNull;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -33,17 +34,17 @@ public abstract class DialogScreenMixin<T extends Dialog> extends Screen {
 	@Shadow
 	@Final
 	private T dialog;
-
-	@Shadow
-	public abstract void runAction(Optional<ClickEvent> closeAction, DialogAction afterAction);
-
 	@Shadow
 	@Final
 	private HeaderAndFooterLayout layout;
+	@Shadow
+	public abstract void runAction(Optional<ClickEvent> closeAction, DialogAction afterAction);
+
 	@Unique
 	private LinearLayout headerLayout = null;
 	@Unique
-	private List<SavedAction> prevActions = null;
+	@NonNull
+	private List<SavedAction> prevActions = List.of();
 	@Unique
 	private boolean prevActionsLoaded = false;
 	@Unique
@@ -51,6 +52,7 @@ public abstract class DialogScreenMixin<T extends Dialog> extends Screen {
 	@Unique
 	private Button eraseSavedActionsButton = null;
 	@Unique
+	@NonNull
 	private final List<SavedAction> currentActions = new ArrayList<>();
 
 	protected DialogScreenMixin(Component title) {
@@ -76,14 +78,14 @@ public abstract class DialogScreenMixin<T extends Dialog> extends Screen {
 
 	@Unique
 	private void createEraseSavedActionsButton() {
-		if (!DialogClickerConfig.isModEnabled || prevActions == null || this.eraseSavedActionsButton != null) {
+		if (!DialogClickerConfig.isModEnabled || prevActions.isEmpty() || this.eraseSavedActionsButton != null) {
 			return;
 		}
 		eraseSavedActionsButton = Button
 				.builder(Component.translatable("dialogclicker.menu.button_erase"), _ -> {
-					prevActions = null;
+					prevActions = List.of();
 					currentActions.clear();
-					saveActions(null);
+					saveActions(List.of());
 				})
 				.width(90)
 				.build();
@@ -97,7 +99,7 @@ public abstract class DialogScreenMixin<T extends Dialog> extends Screen {
 	}
 
 	@Unique
-	private void saveActions(List<SavedAction> savedActions) {
+	private void saveActions(@NonNull List<SavedAction> savedActions) {
 		Component externalTitle = dialog.common().computeExternalTitle();
 		DialogClickerClient.INSTANCE.saveActions(minecraft, externalTitle, savedActions);
 	}
@@ -127,7 +129,7 @@ public abstract class DialogScreenMixin<T extends Dialog> extends Screen {
 			prevActions = DialogClickerClient.INSTANCE.loadActions(minecraft, externalTitle);
 			prevActionsLoaded = true;
 			DialogClicker.LOGGER.info("loadActions {}", prevActions);
-			if (shouldApplySavedActions() && prevActions != null) {
+			if (shouldApplySavedActions()) {
 				for (var prevAction : prevActions) {
 					runAction(prevAction.closeAction(), prevAction.afterAction());
 				}
