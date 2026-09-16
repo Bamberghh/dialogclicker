@@ -56,9 +56,7 @@ public abstract class DialogScreenMixin<T extends Dialog> extends Screen {
 		shouldSaveActionsCheckbox = Checkbox
 				.builder(Component.translatable("dialogclicker.menu.button_save"), font)
 				.selected(shouldSaveActions)
-				.onValueChange((checkbox, value) -> {
-					shouldSaveActions = value;
-				})
+				.onValueChange((_, value) -> shouldSaveActions = value)
 				.build();
 		shouldSaveActionsCheckbox.setTooltip(Tooltip.create(Component.translatable("dialogclicker.menu.button_save.tooltip")));
 		shouldSaveActionsCheckbox.setTabOrderGroup(-10);
