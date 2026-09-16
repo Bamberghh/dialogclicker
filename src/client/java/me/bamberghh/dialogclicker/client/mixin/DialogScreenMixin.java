@@ -4,9 +4,7 @@ import me.bamberghh.dialogclicker.client.DialogClickerClient;
 import me.bamberghh.dialogclicker.client.SavedAction;
 import me.bamberghh.dialogclicker.config.DialogClickerConfig;
 import net.minecraft.client.gui.components.*;
-import net.minecraft.client.gui.layouts.HeaderAndFooterLayout;
-import net.minecraft.client.gui.layouts.LayoutElement;
-import net.minecraft.client.gui.layouts.LinearLayout;
+import net.minecraft.client.gui.layouts.*;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.dialog.DialogConnectionAccess;
 import net.minecraft.client.gui.screens.dialog.DialogScreen;
@@ -35,11 +33,13 @@ public abstract class DialogScreenMixin<T extends Dialog> extends Screen {
 	@Shadow @Final private T dialog;
 	@Shadow private HeaderAndFooterLayout layout;
 	@Shadow public abstract void runAction(Optional<ClickEvent> closeAction, DialogAction afterAction);
-	@Shadow protected abstract LayoutElement createTitleWithWarningButton();
 
 	@Unique @NonNull private List<SavedAction> prevActions = List.of();
 	@Unique @NonNull private final List<SavedAction> currentActions = new ArrayList<>();
 	@Unique private boolean shouldSaveActions = false;
+	@Unique @Nullable private LinearLayout oldHeaderLayout = null;
+	@Unique @Nullable private LinearLayout widgetsLayout = null;
+	@Unique @Nullable private FrameLayout newHeaderLayout = null;
     @Unique @Nullable private Checkbox shouldSaveActionsCheckbox = null;
 	@Unique @Nullable private Button eraseSavedActionsButton = null;
 
@@ -76,7 +76,7 @@ public abstract class DialogScreenMixin<T extends Dialog> extends Screen {
 					saveActions(List.of());
 					rebuildWidgets();
 				})
-				.width(90)
+				.size(90, 17)
 				.build();
 		eraseSavedActionsButton.setTooltip(Tooltip.create(Component.translatable("dialogclicker.menu.button_erase.tooltip")));
 		eraseSavedActionsButton.setTabOrderGroup(-10);
@@ -98,21 +98,28 @@ public abstract class DialogScreenMixin<T extends Dialog> extends Screen {
 		return DialogClickerConfig.isModEnabled && DialogClickerConfig.shouldApplySavedActions;
 	}
 
-	@Inject(method = "createTitleWithWarningButton", at = @At("RETURN"))
+	@Inject(method = "createTitleWithWarningButton", at = @At("RETURN"), cancellable = true)
 	private void createTitleWithWarningButtonMixin(CallbackInfoReturnable<LayoutElement> cir) {
-        LinearLayout headerLayout = (LinearLayout) cir.getReturnValue();
+		var oldHeaderLayout = (LinearLayout) cir.getReturnValue();
+		this.oldHeaderLayout = oldHeaderLayout;
+		newHeaderLayout = new FrameLayout(width, 0);
 		createShouldSaveActionsCheckbox();
 		createEraseSavedActionsButton();
+		widgetsLayout = LinearLayout.horizontal();
+		widgetsLayout.spacing(10);
 		if (shouldSaveActionsCheckbox != null) {
-			headerLayout.addChild(shouldSaveActionsCheckbox);
+			widgetsLayout.addChild(shouldSaveActionsCheckbox);
 		}
 		if (eraseSavedActionsButton != null) {
-			headerLayout.addChild(eraseSavedActionsButton);
+			widgetsLayout.addChild(eraseSavedActionsButton);
 		}
+		newHeaderLayout.addChild(oldHeaderLayout);
+		newHeaderLayout.addChild(widgetsLayout);
+		cir.setReturnValue(newHeaderLayout);
 	}
 
 	@Inject(method = "<init>", at = @At("RETURN"))
-	private void initMixin(Screen previousScreen, Dialog dialog, DialogConnectionAccess connectionAccess, CallbackInfo ci) {
+	private void constructorMixin(Screen previousScreen, Dialog dialog, DialogConnectionAccess connectionAccess, CallbackInfo ci) {
 		Component externalTitle = dialog.common().computeExternalTitle();
 		prevActions = DialogClickerClient.INSTANCE.loadActions(minecraft, externalTitle);
 		if (shouldApplySavedActions()) {
@@ -123,9 +130,37 @@ public abstract class DialogScreenMixin<T extends Dialog> extends Screen {
 	}
 
 	@Inject(method = "init", at = @At("HEAD"))
-	private void init(CallbackInfo info) {
+	private void initMixin(CallbackInfo info) {
 		// Need to do this because the layout gets initialized in DialogScreen's constructor
 		layout = new HeaderAndFooterLayout(this);
+	}
+
+	@Unique
+	private float alignmentForCenterWithRight(int aW, int bW) {
+		return width >= (aW + 2*bW)
+				? 0.5f
+				: Math.max(0f, 1f - (float)bW/(width - aW));
+	}
+
+	@Inject(method = "repositionElements", at = @At("HEAD"))
+	private void repositionElementsMixin(CallbackInfo info) {
+		if (oldHeaderLayout == null || widgetsLayout == null || newHeaderLayout == null) {
+			return;
+		}
+		oldHeaderLayout.arrangeElements();
+		widgetsLayout.arrangeElements();
+		// 10 from layout padding & 10 for margin
+		float alignment = alignmentForCenterWithRight(oldHeaderLayout.getWidth(), widgetsLayout.getWidth() + 20);
+		//noinspection DataFlowIssue
+        newHeaderLayout.removeChildren();
+		newHeaderLayout.setMinWidth(width);
+		//noinspection DataFlowIssue
+		newHeaderLayout.addChild(oldHeaderLayout, settings -> settings.alignHorizontally(alignment));
+		//noinspection DataFlowIssue
+		newHeaderLayout.addChild(widgetsLayout, settings -> {
+			settings.paddingRight(10);
+			settings.alignHorizontallyRight();
+		});
 	}
 
 	@Inject(method = "runAction(Ljava/util/Optional;Lnet/minecraft/server/dialog/DialogAction;)V", at = @At("HEAD"))
