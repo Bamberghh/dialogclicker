@@ -36,6 +36,7 @@ public abstract class DialogScreenMixin<T extends Dialog> extends Screen {
 
 	@Unique @NonNull private List<SavedAction> prevActions = List.of();
 	@Unique @NonNull private final List<SavedAction> currentActions = new ArrayList<>();
+	@Unique private boolean shouldApplySavedActions = true;
 	@Unique private boolean shouldSaveActions = false;
 	@Unique @Nullable private LinearLayout oldHeaderLayout = null;
 	@Unique @Nullable private LinearLayout widgetsLayout = null;
@@ -95,7 +96,7 @@ public abstract class DialogScreenMixin<T extends Dialog> extends Screen {
 
 	@Unique
 	private boolean shouldApplySavedActions() {
-		return DialogClickerConfig.isModEnabled && DialogClickerConfig.shouldApplySavedActions;
+		return DialogClickerConfig.isModEnabled && DialogClickerConfig.shouldApplySavedActions && shouldApplySavedActions;
 	}
 
 	@Inject(method = "createTitleWithWarningButton", at = @At("RETURN"), cancellable = true)
@@ -122,17 +123,20 @@ public abstract class DialogScreenMixin<T extends Dialog> extends Screen {
 	private void constructorMixin(Screen previousScreen, Dialog dialog, DialogConnectionAccess connectionAccess, CallbackInfo ci) {
 		Component externalTitle = dialog.common().computeExternalTitle();
 		prevActions = DialogClickerClient.INSTANCE.loadActions(minecraft, externalTitle);
-		if (shouldApplySavedActions()) {
-			for (var prevAction : prevActions) {
-				runAction(prevAction.closeAction(), prevAction.afterAction());
-			}
-		}
 	}
 
 	@Inject(method = "init", at = @At("HEAD"))
 	private void initMixin(CallbackInfo info) {
 		// Need to do this because the layout gets initialized in DialogScreen's constructor
 		layout = new HeaderAndFooterLayout(this);
+		// Not in the constructor because in case of closing the dialog, its
+		// screen immediately gets set after the constructor in the call stack
+		if (shouldApplySavedActions()) {
+			shouldApplySavedActions = false;
+			for (var prevAction : prevActions) {
+				runAction(prevAction.closeAction(), prevAction.afterAction());
+			}
+		}
 	}
 
 	@Unique
