@@ -3,15 +3,16 @@
 	"id": "dialogclicker",
 	"version": "${version}",
 	"name": "Dialog Clicker",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"description": "Replays actions that you performed and saved in dialogs",
 	"authors": [
-		"Me!"
+		"Bamberghh"
 	],
 	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"homepage": "https://github.com/Bamberghh/dialogclicker",
+		"sources": "https://github.com/Bamberghh/dialogclicker",
+		"issues": "https://github.com/Bamberghh/dialogclicker/issues"
 	},
-	"license": "CC0-1.0",
+	"license": "MIT",
 	"icon": "assets/dialogclicker/icon.png",
 	"environment": "*",
 	"entrypoints": {
