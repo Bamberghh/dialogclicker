@@ -119,11 +119,13 @@ object DialogClickerClient : ClientModInitializer {
 				savedActionsForType.remove(key)
 			}
 		}
-		DialogClicker.LOGGER.info("saveActions {}", savedActions)
+		DialogClicker.LOGGER.info("Actions for dialog {} saved: {}", externalTitle, actions)
 		savedActionsRoot!!.save(modDirectory!!, actionsFile!!)
 	}
 
 	fun loadActions(minecraft: Minecraft, externalTitle: Component): List<SavedAction> {
-		return getSavedActions(minecraft)?.get(externalTitle) ?: return listOf()
+		val actions = getSavedActions(minecraft)?.get(externalTitle) ?: return listOf()
+		DialogClicker.LOGGER.info("Actions for dialog {} loaded: {}", externalTitle, actions)
+		return actions
 	}
 }

@@ -1,0 +1,2 @@
+classTweaker  v1  official
+mutable field net/minecraft/client/gui/screens/dialog/DialogScreen layout Lnet/minecraft/client/gui/layouts/HeaderAndFooterLayout;

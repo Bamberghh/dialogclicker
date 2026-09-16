@@ -44,6 +44,8 @@ repositories {
 loom {
 	splitEnvironmentSourceSets()
 
+	accessWidenerPath = file("src/main/resources/dialogclicker.classtweaker")
+
 	mods {
 		register("dialogclicker") {
 			sourceSet(sourceSets.main.get())

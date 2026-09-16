@@ -9,12 +9,14 @@ import net.minecraft.client.gui.layouts.HeaderAndFooterLayout;
 import net.minecraft.client.gui.layouts.LayoutElement;
 import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.dialog.DialogConnectionAccess;
 import net.minecraft.client.gui.screens.dialog.DialogScreen;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.dialog.Dialog;
 import net.minecraft.server.dialog.DialogAction;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -31,29 +33,16 @@ import java.util.Optional;
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 @Mixin(DialogScreen.class)
 public abstract class DialogScreenMixin<T extends Dialog> extends Screen {
-	@Shadow
-	@Final
-	private T dialog;
-	@Shadow
-	@Final
-	private HeaderAndFooterLayout layout;
-	@Shadow
-	public abstract void runAction(Optional<ClickEvent> closeAction, DialogAction afterAction);
+	@Shadow @Final private T dialog;
+	@Shadow private HeaderAndFooterLayout layout;
+	@Shadow public abstract void runAction(Optional<ClickEvent> closeAction, DialogAction afterAction);
+	@Shadow protected abstract LayoutElement createTitleWithWarningButton();
 
-	@Unique
-	private LinearLayout headerLayout = null;
-	@Unique
-	@NonNull
-	private List<SavedAction> prevActions = List.of();
-	@Unique
-	private boolean prevActionsLoaded = false;
-	@Unique
-	private Checkbox shouldSaveActionsCheckbox = null;
-	@Unique
-	private Button eraseSavedActionsButton = null;
-	@Unique
-	@NonNull
-	private final List<SavedAction> currentActions = new ArrayList<>();
+	@Unique @NonNull private List<SavedAction> prevActions = List.of();
+	@Unique @NonNull private final List<SavedAction> currentActions = new ArrayList<>();
+	@Unique private boolean shouldSaveActions = false;
+    @Unique @Nullable private Checkbox shouldSaveActionsCheckbox = null;
+	@Unique @Nullable private Button eraseSavedActionsButton = null;
 
 	protected DialogScreenMixin(Component title) {
 		super(title);
@@ -61,24 +50,24 @@ public abstract class DialogScreenMixin<T extends Dialog> extends Screen {
 
 	@Unique
 	private void createShouldSaveActionsCheckbox() {
-		if (!DialogClickerConfig.isModEnabled || shouldSaveActionsCheckbox != null) {
+		if (!DialogClickerConfig.isModEnabled) {
 			return;
 		}
 		shouldSaveActionsCheckbox = Checkbox
 				.builder(Component.translatable("dialogclicker.menu.button_save"), font)
+				.selected(shouldSaveActions)
+				.onValueChange((checkbox, value) -> {
+					shouldSaveActions = value;
+				})
 				.build();
 		shouldSaveActionsCheckbox.setTooltip(Tooltip.create(Component.translatable("dialogclicker.menu.button_save.tooltip")));
 		shouldSaveActionsCheckbox.setTabOrderGroup(-10);
-		if (headerLayout != null) {
-			headerLayout.addChild(shouldSaveActionsCheckbox);
-		}
-		addRenderableWidget(shouldSaveActionsCheckbox);
-		layout.arrangeElements();
 	}
 
 	@Unique
 	private void createEraseSavedActionsButton() {
-		if (!DialogClickerConfig.isModEnabled || prevActions.isEmpty() || this.eraseSavedActionsButton != null) {
+		eraseSavedActionsButton = null;
+		if (!DialogClickerConfig.isModEnabled || (prevActions.isEmpty() && currentActions.isEmpty())) {
 			return;
 		}
 		eraseSavedActionsButton = Button
@@ -86,16 +75,12 @@ public abstract class DialogScreenMixin<T extends Dialog> extends Screen {
 					prevActions = List.of();
 					currentActions.clear();
 					saveActions(List.of());
+					rebuildWidgets();
 				})
 				.width(90)
 				.build();
 		eraseSavedActionsButton.setTooltip(Tooltip.create(Component.translatable("dialogclicker.menu.button_erase.tooltip")));
 		eraseSavedActionsButton.setTabOrderGroup(-10);
-		if (headerLayout != null) {
-			headerLayout.addChild(eraseSavedActionsButton);
-		}
-		addRenderableWidget(eraseSavedActionsButton);
-		layout.arrangeElements();
 	}
 
 	@Unique
@@ -106,7 +91,7 @@ public abstract class DialogScreenMixin<T extends Dialog> extends Screen {
 
 	@Unique
 	private boolean shouldSaveActions() {
-		return DialogClickerConfig.isModEnabled && shouldSaveActionsCheckbox != null && shouldSaveActionsCheckbox.selected();
+		return DialogClickerConfig.isModEnabled && shouldSaveActions;
 	}
 
 	@Unique
@@ -115,28 +100,33 @@ public abstract class DialogScreenMixin<T extends Dialog> extends Screen {
 	}
 
 	@Inject(method = "createTitleWithWarningButton", at = @At("RETURN"))
-	private void createTitleWithWarningButton(CallbackInfoReturnable<LayoutElement> cir) {
-        headerLayout = (LinearLayout) cir.getReturnValue();
+	private void createTitleWithWarningButtonMixin(CallbackInfoReturnable<LayoutElement> cir) {
+        LinearLayout headerLayout = (LinearLayout) cir.getReturnValue();
 		createShouldSaveActionsCheckbox();
 		createEraseSavedActionsButton();
+		if (shouldSaveActionsCheckbox != null) {
+			headerLayout.addChild(shouldSaveActionsCheckbox);
+		}
+		if (eraseSavedActionsButton != null) {
+			headerLayout.addChild(eraseSavedActionsButton);
+		}
 	}
 
-	@Inject(method = "init", at = @At("RETURN"))
-	private void init(CallbackInfo info) {
-		if (!prevActionsLoaded) {
-			// TODO: move this into constructor
-			Component externalTitle = dialog.common().computeExternalTitle();
-			prevActions = DialogClickerClient.INSTANCE.loadActions(minecraft, externalTitle);
-			prevActionsLoaded = true;
-			DialogClicker.LOGGER.info("loadActions {}", prevActions);
-			if (shouldApplySavedActions()) {
-				for (var prevAction : prevActions) {
-					runAction(prevAction.closeAction(), prevAction.afterAction());
-				}
+	@Inject(method = "<init>", at = @At("RETURN"))
+	private void initMixin(Screen previousScreen, Dialog dialog, DialogConnectionAccess connectionAccess, CallbackInfo ci) {
+		Component externalTitle = dialog.common().computeExternalTitle();
+		prevActions = DialogClickerClient.INSTANCE.loadActions(minecraft, externalTitle);
+		if (shouldApplySavedActions()) {
+			for (var prevAction : prevActions) {
+				runAction(prevAction.closeAction(), prevAction.afterAction());
 			}
 		}
-		createShouldSaveActionsCheckbox();
-		createEraseSavedActionsButton();
+	}
+
+	@Inject(method = "init", at = @At("HEAD"))
+	private void init(CallbackInfo info) {
+		// Need to do this because the layout gets initialized in DialogScreen's constructor
+		layout = new HeaderAndFooterLayout(this);
 	}
 
 	@Inject(method = "runAction(Ljava/util/Optional;Lnet/minecraft/server/dialog/DialogAction;)V", at = @At("HEAD"))
