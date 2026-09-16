@@ -1,6 +1,5 @@
 package me.bamberghh.dialogclicker.client.mixin;
 
-import me.bamberghh.dialogclicker.DialogClicker;
 import me.bamberghh.dialogclicker.client.DialogClickerClient;
 import me.bamberghh.dialogclicker.client.SavedAction;
 import me.bamberghh.dialogclicker.config.DialogClickerConfig;
@@ -136,5 +135,8 @@ public abstract class DialogScreenMixin<T extends Dialog> extends Screen {
 		}
 		currentActions.add(new SavedAction(closeAction, afterAction));
 		saveActions(currentActions);
+		if (prevActions.isEmpty() && currentActions.size() == 1) {
+			rebuildWidgets();
+		}
 	}
 }
