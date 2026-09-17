@@ -1,7 +1,10 @@
 package me.bamberghh.dialogclicker.client.mixin;
 
+import me.bamberghh.dialogclicker.DialogClicker;
 import me.bamberghh.dialogclicker.client.DialogClickerClient;
+import me.bamberghh.dialogclicker.client.DialogScreenInterface;
 import me.bamberghh.dialogclicker.client.SavedAction;
+import me.bamberghh.dialogclicker.client.SavedActionKey;
 import me.bamberghh.dialogclicker.config.DialogClickerConfig;
 import net.minecraft.client.gui.components.*;
 import net.minecraft.client.gui.layouts.*;
@@ -29,11 +32,12 @@ import java.util.Optional;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 @Mixin(DialogScreen.class)
-public abstract class DialogScreenMixin<T extends Dialog> extends Screen {
+public abstract class DialogScreenMixin<T extends Dialog> extends Screen implements DialogScreenInterface {
 	@Shadow @Final private T dialog;
 	@Shadow private HeaderAndFooterLayout layout;
 	@Shadow public abstract void runAction(Optional<ClickEvent> closeAction, DialogAction afterAction);
 
+	@Unique private final List<SavedActionKey> savedActionKeys = new ArrayList<>();
 	@Unique @NonNull private List<SavedAction> prevActions = List.of();
 	@Unique @NonNull private final List<SavedAction> currentActions = new ArrayList<>();
 	@Unique private boolean shouldApplySavedActions = true;
@@ -46,6 +50,11 @@ public abstract class DialogScreenMixin<T extends Dialog> extends Screen {
 
 	protected DialogScreenMixin(Component title) {
 		super(title);
+	}
+
+	@Override
+	public @NonNull List<SavedActionKey> dialogclicker$getSavedActionKeys() {
+		return savedActionKeys;
 	}
 
 	@Unique
@@ -124,13 +133,53 @@ public abstract class DialogScreenMixin<T extends Dialog> extends Screen {
 	}
 
 	@Inject(method = "init", at = @At("HEAD"))
-	private void initMixin(CallbackInfo info) {
+	private void initMixinHEAD(CallbackInfo info) {
 		// Need to do this because the layout gets initialized in DialogScreen's constructor
 		layout = new HeaderAndFooterLayout(this);
+	}
+
+	@Unique
+	private boolean checkCloseAction(Optional<ClickEvent> maybeCloseAction) {
+		if (maybeCloseAction.isEmpty()) {
+			return true;
+		}
+		var closeAction = maybeCloseAction.get();
+		var matchesShallow = new ArrayList<SavedActionKey>();
+		for (var savedActionKey : savedActionKeys) {
+			if (savedActionKey.doesMatchClickEventShallow(closeAction)) {
+				matchesShallow.add(savedActionKey);
+			}
+		}
+		List<String> matchErrors;
+		if (matchesShallow.isEmpty())  {
+			matchErrors	= List.of("no similar actions found");
+		} else {
+			matchErrors = new ArrayList<>();
+			for (var savedActionKey : matchesShallow) {
+				var error = savedActionKey.doesMatchClickEvent(closeAction);
+				if (error == null) {
+					return true;
+				}
+				matchErrors.add(error);
+			}
+		}
+		if (DialogClicker.LOGGER.isWarnEnabled()) {
+			DialogClicker.LOGGER.warn("Saved action is outdated: {}", String.join("; ", matchErrors));
+		}
+		return false;
+	}
+
+	@Inject(method = "init", at = @At("RETURN"))
+	private void initMixinRETURN(CallbackInfo info) {
 		// Not in the constructor because in case of closing the dialog, its
 		// screen immediately gets set after the constructor in the call stack
 		if (shouldApplySavedActions()) {
 			shouldApplySavedActions = false;
+			for (var prevAction : prevActions) {
+				if (!checkCloseAction(prevAction.closeAction())) {
+					return;
+				}
+			}
 			for (var prevAction : prevActions) {
 				runAction(prevAction.closeAction(), prevAction.afterAction());
 			}

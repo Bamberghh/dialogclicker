@@ -4,6 +4,7 @@
 	"compatibilityLevel": "JAVA_25",
 	"client": [
 		"ClientCommonPacketListenerImplMixin",
+		"DialogControlSetMixin",
 		"DialogScreenMixin"
 	],
 	"injectors": {
