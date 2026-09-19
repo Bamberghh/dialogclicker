@@ -1,10 +1,7 @@
 package me.bamberghh.dialogclicker.client.mixin;
 
 import me.bamberghh.dialogclicker.DialogClicker;
-import me.bamberghh.dialogclicker.client.DialogClickerClient;
-import me.bamberghh.dialogclicker.client.DialogScreenInterface;
-import me.bamberghh.dialogclicker.client.SavedAction;
-import me.bamberghh.dialogclicker.client.SavedActionKey;
+import me.bamberghh.dialogclicker.client.*;
 import me.bamberghh.dialogclicker.config.DialogClickerConfig;
 import net.minecraft.client.gui.components.*;
 import net.minecraft.client.gui.layouts.*;
@@ -45,6 +42,7 @@ public abstract class DialogScreenMixin<T extends Dialog> extends Screen impleme
 	@Unique @Nullable private LinearLayout oldHeaderLayout = null;
 	@Unique @Nullable private LinearLayout widgetsLayout = null;
 	@Unique @Nullable private FrameLayout newHeaderLayout = null;
+	@Unique @Nullable private ColoredWidgetWrapper2 newHeaderRoot = null;
     @Unique @Nullable private Checkbox shouldSaveActionsCheckbox = null;
 	@Unique @Nullable private Button eraseSavedActionsButton = null;
 
@@ -113,7 +111,7 @@ public abstract class DialogScreenMixin<T extends Dialog> extends Screen impleme
 		newHeaderLayout = new FrameLayout(width, 0);
 		createShouldSaveActionsCheckbox();
 		createEraseSavedActionsButton();
-		widgetsLayout = LinearLayout.horizontal();
+		widgetsLayout = LinearLayout.vertical();
 		widgetsLayout.spacing(10);
 		if (shouldSaveActionsCheckbox != null) {
 			widgetsLayout.addChild(shouldSaveActionsCheckbox);
@@ -123,7 +121,9 @@ public abstract class DialogScreenMixin<T extends Dialog> extends Screen impleme
 		}
 		newHeaderLayout.addChild(oldHeaderLayout);
 		newHeaderLayout.addChild(widgetsLayout);
-		cir.setReturnValue(newHeaderLayout);
+		newHeaderRoot = new ColoredWidgetWrapper2(newHeaderLayout, 0, 1f, 2);
+		addRenderableOnly(newHeaderRoot);
+		cir.setReturnValue(newHeaderRoot);
 	}
 
 	@Inject(method = "<init>", at = @At("RETURN"))
@@ -201,17 +201,22 @@ public abstract class DialogScreenMixin<T extends Dialog> extends Screen impleme
 		oldHeaderLayout.arrangeElements();
 		widgetsLayout.arrangeElements();
 		// 10 from layout padding & 10 for margin
-		float alignment = alignmentForCenterWithRight(oldHeaderLayout.getWidth(), widgetsLayout.getWidth() + 20);
+		float alignment = alignmentForCenterWithRight(oldHeaderLayout.getWidth(), widgetsLayout.getWidth() + 10);
 		//noinspection DataFlowIssue
         newHeaderLayout.removeChildren();
 		newHeaderLayout.setMinWidth(width);
 		//noinspection DataFlowIssue
-		newHeaderLayout.addChild(oldHeaderLayout, settings -> settings.alignHorizontally(alignment));
+		newHeaderLayout.addChild(oldHeaderLayout, settings -> {
+			settings.alignHorizontally(alignment);
+		});
 		//noinspection DataFlowIssue
 		newHeaderLayout.addChild(widgetsLayout, settings -> {
+			settings.paddingTop(10);
 			settings.paddingRight(10);
 			settings.alignHorizontallyRight();
 		});
+		//noinspection DataFlowIssue
+		newHeaderRoot.arrangeElements();
 	}
 
 	@Inject(method = "runAction(Ljava/util/Optional;Lnet/minecraft/server/dialog/DialogAction;)V", at = @At("HEAD"))
