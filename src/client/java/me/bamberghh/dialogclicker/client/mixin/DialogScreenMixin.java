@@ -34,6 +34,8 @@ public abstract class DialogScreenMixin<T extends Dialog> extends Screen impleme
 	@Shadow private HeaderAndFooterLayout layout;
 	@Shadow public abstract void runAction(Optional<ClickEvent> closeAction, DialogAction afterAction);
 
+	@Unique private final int LAYOUT_SPACING = 10;
+	@Unique private final int LAYOUT_MARGIN = 4;
 	@Unique private final List<SavedActionKey> savedActionKeys = new ArrayList<>();
 	@Unique @NonNull private List<SavedAction> prevActions = List.of();
 	@Unique @NonNull private final List<SavedAction> currentActions = new ArrayList<>();
@@ -42,7 +44,7 @@ public abstract class DialogScreenMixin<T extends Dialog> extends Screen impleme
 	@Unique @Nullable private LinearLayout oldHeaderLayout = null;
 	@Unique @Nullable private LinearLayout widgetsLayout = null;
 	@Unique @Nullable private FrameLayout newHeaderLayout = null;
-	@Unique @Nullable private ColoredWidgetWrapper2 newHeaderRoot = null;
+	@Unique @Nullable private ColoredWidgetWrapper newHeaderRoot = null;
     @Unique @Nullable private Checkbox shouldSaveActionsCheckbox = null;
 	@Unique @Nullable private Button eraseSavedActionsButton = null;
 
@@ -112,7 +114,8 @@ public abstract class DialogScreenMixin<T extends Dialog> extends Screen impleme
 		createShouldSaveActionsCheckbox();
 		createEraseSavedActionsButton();
 		widgetsLayout = LinearLayout.vertical();
-		widgetsLayout.spacing(10);
+		widgetsLayout.defaultCellSetting().alignHorizontallyRight();
+		widgetsLayout.spacing(LAYOUT_SPACING);
 		if (shouldSaveActionsCheckbox != null) {
 			widgetsLayout.addChild(shouldSaveActionsCheckbox);
 		}
@@ -121,7 +124,7 @@ public abstract class DialogScreenMixin<T extends Dialog> extends Screen impleme
 		}
 		newHeaderLayout.addChild(oldHeaderLayout);
 		newHeaderLayout.addChild(widgetsLayout);
-		newHeaderRoot = new ColoredWidgetWrapper2(newHeaderLayout, 0, 1f, 2);
+		newHeaderRoot = new ColoredWidgetWrapper(newHeaderLayout, 0, 255/4, false, 1f, 0);
 		addRenderableOnly(newHeaderRoot);
 		cir.setReturnValue(newHeaderRoot);
 	}
@@ -200,8 +203,7 @@ public abstract class DialogScreenMixin<T extends Dialog> extends Screen impleme
 		}
 		oldHeaderLayout.arrangeElements();
 		widgetsLayout.arrangeElements();
-		// 10 from layout padding & 10 for margin
-		float alignment = alignmentForCenterWithRight(oldHeaderLayout.getWidth(), widgetsLayout.getWidth() + 10);
+		float alignment = alignmentForCenterWithRight(oldHeaderLayout.getWidth(), LAYOUT_SPACING + widgetsLayout.getWidth() + LAYOUT_MARGIN);
 		//noinspection DataFlowIssue
         newHeaderLayout.removeChildren();
 		newHeaderLayout.setMinWidth(width);
@@ -211,8 +213,8 @@ public abstract class DialogScreenMixin<T extends Dialog> extends Screen impleme
 		});
 		//noinspection DataFlowIssue
 		newHeaderLayout.addChild(widgetsLayout, settings -> {
-			settings.paddingTop(10);
-			settings.paddingRight(10);
+			settings.paddingTop(LAYOUT_MARGIN);
+			settings.paddingRight(LAYOUT_MARGIN);
 			settings.alignHorizontallyRight();
 		});
 		//noinspection DataFlowIssue

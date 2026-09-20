@@ -2,88 +2,77 @@ package me.bamberghh.dialogclicker.client
 
 import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.gui.components.AbstractWidget
+import net.minecraft.client.gui.components.Renderable
+import net.minecraft.client.gui.components.Tooltip
+import net.minecraft.client.gui.components.WidgetTooltipHolder
+import net.minecraft.client.gui.components.events.GuiEventListener
 import net.minecraft.client.gui.layouts.Layout
 import net.minecraft.client.gui.layouts.LayoutElement
+import net.minecraft.client.gui.narration.NarratableEntry
 import net.minecraft.client.gui.narration.NarrationElementOutput
 import net.minecraft.client.gui.navigation.ScreenRectangle
 import net.minecraft.client.renderer.RenderPipelines
-import net.minecraft.network.chat.CommonComponents
+import net.minecraft.network.chat.Component
 import net.minecraft.util.Mth
 import java.util.function.Consumer
 import kotlin.random.Random
 
-class ColoredWidgetWrapper(private var element: LayoutElement?, val seed: Int, val sizeFactor: Float, val padding: Int) :
-    AbstractWidget(
-        element?.x ?: 0,
-        element?.y ?: 0,
-        element?.width ?: 0,
-        element?.height ?: 0,
-        (element as? AbstractWidget)?.message ?: CommonComponents.EMPTY
-    ), Layout {
+class ColoredWidgetWrapper(
+    var element: LayoutElement? = null,
+    val colorSeed: Int = 0,
+    val colorAlpha: Int = 0xFF,
+    val colorDarkerLayouts: Boolean = true,
+    val sizeFactor: Float = 1f,
+    val padding: Int = 0
+) : GuiEventListener, Renderable, NarratableEntry, Layout {
+    private var tooltip: WidgetTooltipHolder = WidgetTooltipHolder()
+    private var isFocused = false
+    private var isHovered = false
+
     override fun setX(x: Int) {
-//        super.setX(x)
         element?.x = x
     }
 
     override fun setY(y: Int) {
-//        super.setY(x)
         element?.y = y
     }
 
-    override fun getX(): Int {
-        return element?.x ?: 0
+    override fun getX(): Int = element?.x ?: 0
+    override fun getY(): Int = element?.y ?: 0
+    override fun getWidth(): Int = element?.width ?: 0
+    override fun getHeight(): Int = element?.height ?: 0
+    override fun getRectangle(): ScreenRectangle = element?.rectangle ?: ScreenRectangle.empty()
+
+    override fun setFocused(focused: Boolean) {
+        isFocused = focused
     }
 
-    override fun getY(): Int {
-        return element?.y ?: 0
-    }
-
-    override fun getWidth(): Int {
-        return element?.width ?: 0
-    }
-
-    override fun getHeight(): Int {
-        return element?.height ?: 0
-    }
-
-    override fun getRectangle(): ScreenRectangle {
-        return element?.rectangle ?: ScreenRectangle.empty()
-    }
+    override fun isFocused(): Boolean = isFocused
 
     override fun setPosition(x: Int, y: Int) {
-//        super<AbstractWidget>.setPosition(x, y)
         element?.setPosition(x, y)
     }
 
     override fun visitWidgets(widgetVisitor: Consumer<AbstractWidget>) {
-        super<AbstractWidget>.visitWidgets(widgetVisitor)
         element?.visitWidgets(widgetVisitor)
     }
 
     override fun visitChildren(layoutElementVisitor: Consumer<LayoutElement>) {
-        val element = element
-        if (element is Layout) {
-            layoutElementVisitor.accept(element)
-//            element.visitChildren(layoutElementVisitor)
-        } else {
-            element?.visitWidgets { layoutElementVisitor.accept(it) }
-        }
+        element?.let { layoutElementVisitor.accept(it) }
     }
 
     override fun removeChildren() {
         element = null
     }
 
-    fun setChild(child: LayoutElement?) {
-        this.element = child
-    }
-
-    override fun extractWidgetRenderState(
+    override fun extractRenderState(
         graphics: GuiGraphicsExtractor,
         mouseX: Int,
         mouseY: Int,
         a: Float
     ) {
+        isHovered = graphics.containsPointInScissor(mouseX, mouseY) && rectangle.containsPoint(mouseX, mouseY)
+        val elementsText = Component.empty()
         fun drawElement(random: Random, isWidget: Boolean, element: LayoutElement) {
             val xm = element.x + 0.5f * element.width
             val ym = element.y + 0.5f * element.height
@@ -94,29 +83,51 @@ class ColoredWidgetWrapper(private var element: LayoutElement?, val seed: Int, v
             val x1 = xm + wm
             val y1 = ym + hm
             val hue = random.nextFloat()
+            val color = Mth.hsvToArgb(
+                hue,
+                if (isWidget) 3 / 4f + 1 / 4f * random.nextFloat() else 1 / 4f + 1 / 4f * random.nextFloat(),
+                if (isWidget) 7 / 8f + 1 / 8f * random.nextFloat() else 1 / 8f + 1 / 8f * random.nextFloat(),
+                colorAlpha
+            )
+            if (element.rectangle.containsPoint(mouseX, mouseY)) {
+                var name = element.javaClass.typeName
+                name = name.removePrefix("net.minecraft.client.gui.")
+                name = name.removePrefix("layouts.")
+                name = name.removePrefix("components.")
+                if (!elementsText.siblings.isEmpty()) {
+                    elementsText.append("\n");
+                }
+                elementsText.append(
+                    Component.literal(name).withColor(
+                        Mth.hsvToArgb(
+                            hue,
+                            if (isWidget) 1f else 1 / 3f,
+                            if (isWidget) 1f else 1 / 3f,
+                            0xFF
+                        )
+                    )
+                )
+            }
             graphics.fill(
                 RenderPipelines.GUI,
                 x0.toInt(),
                 y0.toInt(),
                 x1.toInt(),
                 y1.toInt(),
-                Mth.hsvToArgb(
-                    hue,
-                    if (isWidget) 3/4f + 1/4f*random.nextFloat() else 1/4f + 1/4f*random.nextFloat(),
-                    if (isWidget) 7/8f + 1/8f*random.nextFloat() else 1/8f + 1/8f*random.nextFloat(),
-                    0xFF
-                ),
+                color,
             )
         }
+
         fun visitLayouts(random: Random, root: Layout) {
             root.visitChildren { element ->
                 if (element is Layout) {
-                    drawElement(random, false, element)
+                    drawElement(random, !colorDarkerLayouts, element)
                     visitLayouts(random, element)
                 }
             }
         }
-        val random = Random(seed)
+
+        val random = Random(colorSeed)
         visitLayouts(random, this)
         visitWidgets { widget ->
             if (widget != this) {
@@ -124,8 +135,19 @@ class ColoredWidgetWrapper(private var element: LayoutElement?, val seed: Int, v
             }
         }
         (element as? AbstractWidget)?.extractRenderState(graphics, mouseX, mouseY, a)
+        tooltip.set(Tooltip.create(elementsText))
+        tooltip.refreshTooltipForNextRenderPass(
+            graphics,
+            mouseX,
+            mouseY,
+            isHovered,
+            isFocused,
+            this.getRectangle()
+        )
     }
 
-    override fun updateWidgetNarration(output: NarrationElementOutput) {
+    override fun narrationPriority(): NarratableEntry.NarrationPriority = NarratableEntry.NarrationPriority.NONE
+
+    override fun updateNarration(output: NarrationElementOutput) {
     }
 }
