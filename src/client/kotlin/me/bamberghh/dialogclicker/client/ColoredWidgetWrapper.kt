@@ -21,7 +21,7 @@ class ColoredWidgetWrapper(
     var element: LayoutElement? = null,
     val colorSeed: Int = 0,
     val colorAlpha: Int = 0xFF,
-    val colorDarkerLayouts: Boolean = true,
+    val colorDarkerLayouts: Boolean = false,
     val sizeFactor: Float = 1f,
     val padding: Int = 0
 ) : GuiEventListener, Renderable, NarratableEntry, Layout {

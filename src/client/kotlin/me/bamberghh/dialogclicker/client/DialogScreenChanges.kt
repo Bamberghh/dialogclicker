@@ -144,11 +144,7 @@ class DialogScreenChanges {
         (self as ScreenAccessor).`dialogclicker$addRenderableOnly`(
             ColoredWidgetWrapper(
                 newHeaderLayout,
-                0,
-                255 / 4,
-                false,
-                1f,
-                0
+                colorAlpha = 0xFF / 3,
             )
         )
 
