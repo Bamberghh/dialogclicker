@@ -67,6 +67,7 @@ class DialogScreenMixinImpl(val self: DialogScreen<*>) {
         }
         val eraseActionsButton = Button
             .builder(Component.translatable("dialogclicker.menu.button_erase")) {
+                errorsClear()
                 prevActions = listOf()
                 currentActions.clear()
                 saveActions(listOf())
@@ -104,20 +105,14 @@ class DialogScreenMixinImpl(val self: DialogScreen<*>) {
 
     private fun checkPrevActions() {
         shouldCheckPrevActions = false
-        errors = Component.empty()
+        errorsClear()
         for (prevAction in prevActions) {
             if (!checkCloseAction(prevAction.closeAction)) {
                 shouldApplyPrevActions = false
-                errorsNotification.message = Component.literal("Saved action is outdated").withColor(TextColor.RED)
-                errorsNotification.setTooltip(Tooltip.create(errors))
-                errorsNotification.visible = true
-                (self as ScreenAccessor).dialogclicker_repositionElements()
+                errorsUpdate(Component.literal("Saved action is outdated"))
                 return
             }
         }
-        errorsNotification.message = Component.empty()
-        errorsNotification.setTooltip(null)
-        errorsNotification.visible = false
         (self as ScreenAccessor).dialogclicker_repositionElements()
     }
 
@@ -167,6 +162,18 @@ class DialogScreenMixinImpl(val self: DialogScreen<*>) {
         return false
     }
 
+    private fun errorsClear() {
+        errors.siblings.clear()
+        errorsNotification.message = errors
+        errorsNotification.setTooltip(null)
+    }
+
+    private fun errorsUpdate(briefMessage: MutableComponent) {
+        errorsNotification.message = briefMessage.withColor(TextColor.RED)
+        errorsNotification.setTooltip(Tooltip.create(errors))
+        (self as ScreenAccessor).dialogclicker_repositionElements()
+    }
+
     fun constructorRETURN(
         @Suppress("unused") previousScreen: Screen?,
         dialog: Dialog,
@@ -175,7 +182,6 @@ class DialogScreenMixinImpl(val self: DialogScreen<*>) {
     ) {
         val externalTitle = dialog.common().computeExternalTitle()
         prevActions = loadActions((self as ScreenAccessor).dialogclicker_getMinecraft(), externalTitle)
-        errorsNotification.visible = false;
     }
 
     fun initHEAD(@Suppress("unused") ci: CallbackInfo) {
@@ -265,7 +271,8 @@ class DialogScreenMixinImpl(val self: DialogScreen<*>) {
         if (!shouldSaveActions()) {
             return
         }
-        val needRebuilding = prevActions.isEmpty() && currentActions.isEmpty()
+        val needRebuilding = prevActions.isEmpty() && currentActions.isEmpty() || errors.siblings.isNotEmpty()
+        errorsClear()
         currentActions.add(ActionValue(closeAction, afterAction))
         saveActions(currentActions)
         if (needRebuilding) {
