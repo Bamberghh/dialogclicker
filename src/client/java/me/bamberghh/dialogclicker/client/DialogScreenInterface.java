@@ -3,5 +3,5 @@ package me.bamberghh.dialogclicker.client;
 import java.util.List;
 
 public interface DialogScreenInterface {
-    List<SavedActionKey> dialogclicker$getSavedActionKeys();
+    List<SavedActionKey> dialogclicker_getSavedActionKeys();
 }

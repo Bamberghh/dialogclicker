@@ -28,6 +28,6 @@ object DialogControlSetChanges {
                 SavedActionKeyStaticAction(clickEvent)
             }
         }
-        dialogScreenInterface.`dialogclicker$getSavedActionKeys`().add(key)
+        dialogScreenInterface.dialogclicker_getSavedActionKeys().add(key)
     }
 }

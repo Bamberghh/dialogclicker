@@ -7,6 +7,7 @@ import me.bamberghh.dialogclicker.client.mixin.accessor.ScreenAccessor
 import me.bamberghh.dialogclicker.config.DialogClickerConfig
 import net.minecraft.client.gui.components.Button
 import net.minecraft.client.gui.components.Checkbox
+import net.minecraft.client.gui.components.StringWidget
 import net.minecraft.client.gui.components.Tooltip
 import net.minecraft.client.gui.layouts.*
 import net.minecraft.client.gui.screens.Screen
@@ -14,6 +15,8 @@ import net.minecraft.client.gui.screens.dialog.DialogConnectionAccess
 import net.minecraft.client.gui.screens.dialog.DialogScreen
 import net.minecraft.network.chat.ClickEvent
 import net.minecraft.network.chat.Component
+import net.minecraft.network.chat.MutableComponent
+import net.minecraft.network.chat.TextColor
 import net.minecraft.server.dialog.Dialog
 import net.minecraft.server.dialog.DialogAction
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo
@@ -21,25 +24,28 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable
 import java.util.*
 import kotlin.math.max
 
-class DialogScreenChanges {
+class DialogScreenChanges(val self: DialogScreen<*>) {
     companion object {
         private const val LAYOUT_SPACING = 10
-        private const val LAYOUT_MARGIN_TOP = 3
+        private const val LAYOUT_MARGIN_TOP = 13
         private const val LAYOUT_MARGIN_RIGHT = 4
     }
 
     val savedActionKeys: MutableList<SavedActionKey> = ArrayList()
     private var prevActions: List<SavedAction> = listOf()
     private val currentActions: MutableList<SavedAction> = ArrayList()
+    private var shouldCheckSavedActions = true
     private var shouldApplySavedActions = true
     private var shouldSaveActions = false
-    private var oldHeaderLayout: LinearLayout? = null
-    private var widgetsLayout: LinearLayout? = null
-    private var newHeaderLayout: FrameLayout? = null
+    private var centerLayout: LinearLayout? = null
+    private var rightLayout: LinearLayout? = null
+    private var headerLayout: FrameLayout? = null
     private var shouldSaveActionsCheckbox: Checkbox? = null
     private var eraseSavedActionsButton: Button? = null
+    private var errors: MutableComponent = Component.empty()
+    private var errorsNotification: StringWidget = StringWidget(errors, self.font)
 
-    private fun createShouldSaveActionsCheckbox(self: DialogScreen<*>) {
+    private fun createShouldSaveActionsCheckbox() {
         if (!DialogClickerConfig.isModEnabled) {
             return
         }
@@ -53,7 +59,7 @@ class DialogScreenChanges {
         this.shouldSaveActionsCheckbox = shouldSaveActionsCheckbox
     }
 
-    private fun createEraseSavedActionsButton(self: DialogScreen<*>) {
+    private fun createEraseSavedActionsButton() {
         eraseSavedActionsButton = null
         if (!DialogClickerConfig.isModEnabled || (prevActions.isEmpty() && currentActions.isEmpty())) {
             return
@@ -62,8 +68,8 @@ class DialogScreenChanges {
             .builder(Component.translatable("dialogclicker.menu.button_erase")) {
                 prevActions = listOf()
                 currentActions.clear()
-                saveActions(self, listOf())
-                (self as ScreenAccessor).`dialogclicker$rebuildWidgets`()
+                saveActions(listOf())
+                (self as ScreenAccessor).dialogclicker_rebuildWidgets()
             }
             .size(90, 17)
             .build()
@@ -72,10 +78,10 @@ class DialogScreenChanges {
         this.eraseSavedActionsButton = eraseSavedActionsButton
     }
 
-    private fun saveActions(self: DialogScreen<*>, savedActions: List<SavedAction>) {
-        val externalTitle = (self as DialogScreenAccessor).`dialogclicker$getDialog`().common().computeExternalTitle()
+    private fun saveActions(savedActions: List<SavedAction>) {
+        val externalTitle = (self as DialogScreenAccessor).dialogclicker_getDialog().common().computeExternalTitle()
         DialogClickerClient.saveActions(
-            (self as ScreenAccessor).`dialogclicker$getMinecraft`(),
+            (self as ScreenAccessor).dialogclicker_getMinecraft(),
             externalTitle,
             savedActions
         )
@@ -83,6 +89,10 @@ class DialogScreenChanges {
 
     private fun shouldSaveActions(): Boolean {
         return DialogClickerConfig.isModEnabled && shouldSaveActions
+    }
+
+    private fun shouldCheckSavedActions(): Boolean {
+        return DialogClickerConfig.isModEnabled && DialogClickerConfig.shouldApplySavedActions && shouldCheckSavedActions
     }
 
     private fun shouldApplySavedActions(): Boolean {
@@ -110,6 +120,12 @@ class DialogScreenChanges {
                 matchErrors.add(error)
             }
         }
+        for (matchError in matchErrors) {
+            if (errors.siblings.isNotEmpty()) {
+                errors.append(Component.literal("\n"))
+            }
+            errors.append(matchError)
+        }
         if (DialogClicker.LOGGER.isWarnEnabled) {
             DialogClicker.LOGGER.warn("Saved action is outdated: {}", matchErrors.joinToString("; "))
         }
@@ -122,93 +138,112 @@ class DialogScreenChanges {
         else max(0f, 1f - bW.toFloat() / (w - aW))
     }
 
-    fun createTitleWithWarningButtonRETURN(self: DialogScreen<*>, cir: CallbackInfoReturnable<LayoutElement?>) {
-        val oldHeaderLayout = cir.getReturnValue() as LinearLayout
-        this.oldHeaderLayout = oldHeaderLayout
+    fun createTitleWithWarningButtonRETURN(cir: CallbackInfoReturnable<LayoutElement?>) {
+        val centerLayout = cir.getReturnValue() as LinearLayout
+        this.centerLayout = centerLayout
 
-        createShouldSaveActionsCheckbox(self)
-        createEraseSavedActionsButton(self)
+        createShouldSaveActionsCheckbox()
+        createEraseSavedActionsButton()
 
-        val widgetsLayout = LinearLayout.vertical()
-        widgetsLayout.defaultCellSetting().alignHorizontallyRight()
-        widgetsLayout.spacing(LAYOUT_SPACING)
-        shouldSaveActionsCheckbox?.let { widgetsLayout.addChild(it) }
-        eraseSavedActionsButton?.let { widgetsLayout.addChild(it) }
-        this.widgetsLayout = widgetsLayout
+        val rightLayout = LinearLayout.vertical()
+        rightLayout.defaultCellSetting().alignHorizontallyRight()
+        rightLayout.spacing(LAYOUT_SPACING)
+        shouldSaveActionsCheckbox?.let { rightLayout.addChild(it) }
+        eraseSavedActionsButton?.let { rightLayout.addChild(it) }
+        rightLayout.addChild(errorsNotification)
+        this.rightLayout = rightLayout
 
-        val newHeaderLayout = FrameLayout(self.width, 0)
-        newHeaderLayout.addChild(oldHeaderLayout)
-        newHeaderLayout.addChild(widgetsLayout)
-        this.newHeaderLayout = newHeaderLayout
+        val headerLayout = FrameLayout(self.width, 0)
+        headerLayout.defaultChildLayoutSetting().alignVerticallyTop().paddingTop(LAYOUT_MARGIN_TOP)
+        headerLayout.addChild(centerLayout)
+        headerLayout.addChild(rightLayout)
+        this.headerLayout = headerLayout
 
-        (self as ScreenAccessor).`dialogclicker$addRenderableOnly`(
+        (self as ScreenAccessor).dialogclicker_addRenderableOnly(
             ColoredWidgetWrapper(
-                newHeaderLayout,
-                colorAlpha = 0xFF / 3,
+                headerLayout,
+                colorAlpha = 0xFF / 4,
             )
         )
 
-        cir.setReturnValue(newHeaderLayout)
+        cir.setReturnValue(headerLayout)
     }
 
     fun constructorRETURN(
-        self: DialogScreen<*>,
         @Suppress("unused") previousScreen: Screen?,
         dialog: Dialog,
         @Suppress("unused") connectionAccess: DialogConnectionAccess?,
         @Suppress("unused") ci: CallbackInfo?
     ) {
         val externalTitle = dialog.common().computeExternalTitle()
-        prevActions = loadActions((self as ScreenAccessor).`dialogclicker$getMinecraft`(), externalTitle)
+        prevActions = loadActions((self as ScreenAccessor).dialogclicker_getMinecraft(), externalTitle)
+        errorsNotification.visible = false;
     }
 
-    fun initHEAD(self: DialogScreen<*>, @Suppress("unused") ci: CallbackInfo) {
+    fun initHEAD(@Suppress("unused") ci: CallbackInfo) {
         // Need to do this because the layout gets initialized in DialogScreen's constructor
-        (self as DialogScreenAccessor).`dialogclicker$setLayout`(HeaderAndFooterLayout(self))
+        (self as DialogScreenAccessor).dialogclicker_setLayout(HeaderAndFooterLayout(self))
+        errorsNotification.message = Component.empty()
     }
 
-    fun initRETURN(self: DialogScreen<*>, @Suppress("unused") ci: CallbackInfo) {
+    fun initRETURN(@Suppress("unused") ci: CallbackInfo) {
         // Not in the constructor because in case of closing the dialog, its
         // screen immediately gets set after the constructor in the call stack
-        if (shouldApplySavedActions()) {
-            shouldApplySavedActions = false
+        if (shouldCheckSavedActions()) {
+            shouldCheckSavedActions = false
+            errors = Component.empty()
             for (prevAction in prevActions) {
                 if (!checkCloseAction(prevAction.closeAction)) {
+                    errorsNotification.message = Component.literal("Saved action is outdated").withColor(TextColor.RED)
+                    errorsNotification.setTooltip(Tooltip.create(errors))
+                    errorsNotification.visible = true
+                    (self as ScreenAccessor).dialogclicker_repositionElements()
                     return
                 }
             }
+            errorsNotification.message = Component.empty()
+            errorsNotification.setTooltip(null)
+            errorsNotification.visible = false
+            (self as ScreenAccessor).dialogclicker_repositionElements()
+        }
+        if (shouldApplySavedActions()) {
+            shouldApplySavedActions = false
             for (prevAction in prevActions) {
                 self.runAction(prevAction.closeAction, prevAction.afterAction)
             }
         }
     }
 
-    fun repositionElementsHEAD(self: DialogScreen<*>, @Suppress("unused") ci: CallbackInfo) {
-        val oldHeaderLayout = oldHeaderLayout
-        val widgetsLayout = widgetsLayout
-        val newHeaderLayout = newHeaderLayout
-        if (oldHeaderLayout == null || widgetsLayout == null || newHeaderLayout == null) {
+    fun repositionElementsHEAD(@Suppress("unused") ci: CallbackInfo) {
+        val centerLayout = centerLayout
+        val rightLayout = rightLayout
+        val headerLayout = headerLayout
+        if (centerLayout == null || rightLayout == null || headerLayout == null) {
             return
         }
-        oldHeaderLayout.arrangeElements()
-        widgetsLayout.arrangeElements()
+        centerLayout.arrangeElements()
+        rightLayout.removeChildren()
+        shouldSaveActionsCheckbox?.let { rightLayout.addChild(it) }
+        eraseSavedActionsButton?.let { rightLayout.addChild(it) }
+        if (errors.siblings.isNotEmpty()) {
+            rightLayout.addChild(errorsNotification)
+        }
+        rightLayout.arrangeElements()
         val alignment = alignmentForCenterWithRight(
             self.width,
-            oldHeaderLayout.width,
-            LAYOUT_SPACING + widgetsLayout.width + LAYOUT_MARGIN_TOP
+            centerLayout.width,
+            LAYOUT_SPACING + rightLayout.width + LAYOUT_MARGIN_RIGHT
         )
-        newHeaderLayout.removeChildren()
-        newHeaderLayout.setMinWidth(self.width)
-        newHeaderLayout.addChild(oldHeaderLayout) { it.alignHorizontally(alignment) }
-        newHeaderLayout.addChild(widgetsLayout) {
-            it.paddingTop(LAYOUT_MARGIN_TOP)
+        headerLayout.removeChildren()
+        headerLayout.setMinWidth(self.width)
+        headerLayout.addChild(centerLayout) { it.alignHorizontally(alignment) }
+        headerLayout.addChild(rightLayout) {
             it.paddingRight(LAYOUT_MARGIN_RIGHT)
             it.alignHorizontallyRight()
         }
     }
 
     fun runActionHEAD(
-        self: DialogScreen<*>,
         closeAction: Optional<ClickEvent>,
         afterAction: DialogAction,
         @Suppress("unused") ci: CallbackInfo
@@ -217,9 +252,9 @@ class DialogScreenChanges {
             return
         }
         currentActions.add(SavedAction(closeAction, afterAction))
-        saveActions(self, currentActions)
+        saveActions(currentActions)
         if (prevActions.isEmpty() && currentActions.size == 1) {
-            (self as ScreenAccessor).`dialogclicker$rebuildWidgets`()
+            (self as ScreenAccessor).dialogclicker_rebuildWidgets()
         }
     }
 }

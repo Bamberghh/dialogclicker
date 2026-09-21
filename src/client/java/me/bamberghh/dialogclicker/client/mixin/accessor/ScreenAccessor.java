@@ -10,10 +10,12 @@ import org.spongepowered.asm.mixin.gen.Invoker;
 @Mixin(Screen.class)
 public interface ScreenAccessor {
     @Accessor("minecraft")
-    Minecraft dialogclicker$getMinecraft();
+    Minecraft dialogclicker_getMinecraft();
     @Invoker("rebuildWidgets")
-    void dialogclicker$rebuildWidgets();
+    void dialogclicker_rebuildWidgets();
+    @Invoker("repositionElements")
+    void dialogclicker_repositionElements();
     @Invoker("addRenderableOnly")
-    <T extends Renderable> T dialogclicker$addRenderableOnly(final T renderable);
+    <T extends Renderable> T dialogclicker_addRenderableOnly(final T renderable);
 }
 

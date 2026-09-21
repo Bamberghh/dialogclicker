@@ -25,49 +25,44 @@ import java.util.Optional;
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 @Mixin(DialogScreen.class)
 public abstract class DialogScreenMixin<T extends Dialog> extends Screen implements DialogScreenInterface {
-	@Unique private final DialogScreenChanges changes = new DialogScreenChanges();
+	@Unique private final DialogScreenChanges changes = new DialogScreenChanges((DialogScreen<?>) (Object) this);
 
 	protected DialogScreenMixin(Component title) {
 		super(title);
 	}
 
-	@Unique
-	private DialogScreen<?> asOriginal() {
-		return (DialogScreen<?>) (Object) this;
-	}
-
 	@Override
-	public @NonNull List<SavedActionKey> dialogclicker$getSavedActionKeys() {
+	public @NonNull List<SavedActionKey> dialogclicker_getSavedActionKeys() {
 		return changes.getSavedActionKeys();
 	}
 
 	@Inject(method = "createTitleWithWarningButton", at = @At("RETURN"), cancellable = true)
 	private void createTitleWithWarningButtonRETURN(CallbackInfoReturnable<LayoutElement> cir) {
-		changes.createTitleWithWarningButtonRETURN(asOriginal(), cir);
+		changes.createTitleWithWarningButtonRETURN(cir);
 	}
 
 	@Inject(method = "<init>", at = @At("RETURN"))
 	private void constructorRETURN(Screen previousScreen, Dialog dialog, DialogConnectionAccess connectionAccess, CallbackInfo ci) {
-		changes.constructorRETURN(asOriginal(), previousScreen, dialog, connectionAccess, ci);
+		changes.constructorRETURN(previousScreen, dialog, connectionAccess, ci);
 	}
 
 	@Inject(method = "init", at = @At("HEAD"))
 	private void initHEAD(CallbackInfo ci) {
-		changes.initHEAD(asOriginal(), ci);
+		changes.initHEAD(ci);
 	}
 
 	@Inject(method = "init", at = @At("RETURN"))
 	private void initRETURN(CallbackInfo ci) {
-		changes.initRETURN(asOriginal(), ci);
+		changes.initRETURN(ci);
 	}
 
 	@Inject(method = "repositionElements", at = @At("HEAD"))
 	private void repositionElementsHEAD(CallbackInfo ci) {
-		changes.repositionElementsHEAD(asOriginal(), ci);
+		changes.repositionElementsHEAD(ci);
 	}
 
 	@Inject(method = "runAction(Ljava/util/Optional;Lnet/minecraft/server/dialog/DialogAction;)V", at = @At("HEAD"))
 	private void runActionHEAD(@SuppressWarnings("OptionalUsedAsFieldOrParameterType") Optional<ClickEvent> closeAction, DialogAction afterAction, CallbackInfo ci) {
-		changes.runActionHEAD(asOriginal(), closeAction, afterAction, ci);
+		changes.runActionHEAD(closeAction, afterAction, ci);
 	}
 }

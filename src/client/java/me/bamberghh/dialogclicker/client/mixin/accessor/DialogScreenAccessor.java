@@ -8,7 +8,7 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 
 @Mixin(DialogScreen.class)
 public interface DialogScreenAccessor {
-    @Accessor("dialog") Dialog dialogclicker$getDialog();
-    @Accessor("layout") void dialogclicker$setLayout(HeaderAndFooterLayout value);
+    @Accessor("dialog") Dialog dialogclicker_getDialog();
+    @Accessor("layout") void dialogclicker_setLayout(HeaderAndFooterLayout value);
 }
 
