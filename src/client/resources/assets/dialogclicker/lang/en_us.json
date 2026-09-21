@@ -3,6 +3,7 @@
   "dialogclicker.menu.button_save.tooltip": "Save the actions that you perform in this dialog",
   "dialogclicker.menu.button_erase": "Erase actions",
   "dialogclicker.menu.button_erase.tooltip": "Erase the saved & current actions that you performed in this dialog",
+  "dialogclicker.menu.error.outdated_saved_actions": "Saved actions are outdated",
 
   "dialogclicker.midnightconfig.title": "Dialog Clicker Config",
   "dialogclicker.midnightconfig.isModEnabled": "Is mod enabled",

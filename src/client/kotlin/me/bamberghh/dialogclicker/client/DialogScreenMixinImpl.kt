@@ -109,7 +109,7 @@ class DialogScreenMixinImpl(val self: DialogScreen<*>) {
         for (prevAction in prevActions) {
             if (!checkCloseAction(prevAction.closeAction)) {
                 shouldApplyPrevActions = false
-                errorsUpdate(Component.literal("Saved action is outdated"))
+                errorsUpdate(Component.translatable("dialogclicker.menu.error.outdated_saved_actions"))
                 return
             }
         }
