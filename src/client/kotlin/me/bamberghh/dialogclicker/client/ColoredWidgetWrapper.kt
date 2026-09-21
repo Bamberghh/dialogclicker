@@ -5,11 +5,8 @@ import net.minecraft.client.gui.components.AbstractWidget
 import net.minecraft.client.gui.components.Renderable
 import net.minecraft.client.gui.components.Tooltip
 import net.minecraft.client.gui.components.WidgetTooltipHolder
-import net.minecraft.client.gui.components.events.GuiEventListener
 import net.minecraft.client.gui.layouts.Layout
 import net.minecraft.client.gui.layouts.LayoutElement
-import net.minecraft.client.gui.narration.NarratableEntry
-import net.minecraft.client.gui.narration.NarrationElementOutput
 import net.minecraft.client.gui.navigation.ScreenRectangle
 import net.minecraft.client.renderer.RenderPipelines
 import net.minecraft.network.chat.Component
@@ -24,7 +21,7 @@ class ColoredWidgetWrapper(
     val colorDarkerLayouts: Boolean = false,
     val sizeFactor: Float = 1f,
     val padding: Int = 0
-) : GuiEventListener, Renderable, NarratableEntry, Layout {
+) : Renderable, Layout {
     private var tooltip: WidgetTooltipHolder = WidgetTooltipHolder()
     private var isFocused = false
     private var isHovered = false
@@ -42,12 +39,6 @@ class ColoredWidgetWrapper(
     override fun getWidth(): Int = element?.width ?: 0
     override fun getHeight(): Int = element?.height ?: 0
     override fun getRectangle(): ScreenRectangle = element?.rectangle ?: ScreenRectangle.empty()
-
-    override fun setFocused(focused: Boolean) {
-        isFocused = focused
-    }
-
-    override fun isFocused(): Boolean = isFocused
 
     override fun setPosition(x: Int, y: Int) {
         element?.setPosition(x, y)
@@ -144,10 +135,5 @@ class ColoredWidgetWrapper(
             isFocused,
             this.getRectangle()
         )
-    }
-
-    override fun narrationPriority(): NarratableEntry.NarrationPriority = NarratableEntry.NarrationPriority.NONE
-
-    override fun updateNarration(output: NarrationElementOutput) {
     }
 }
