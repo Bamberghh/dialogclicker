@@ -6,7 +6,7 @@
 
   "dialogclicker.midnightconfig.title": "Dialog Clicker Config",
   "dialogclicker.midnightconfig.isModEnabled": "Is mod enabled",
-  "dialogclicker.midnightconfig.shouldApplySavedActions": "Should apply saved actions",
+  "dialogclicker.midnightconfig.shouldApplyPrevActions": "Should apply saved actions",
   "dialogclicker.midnightconfig.shouldPrintReceivedDialogSNBT": "Should print received dialog SNBT",
   "dialogclicker.midnightconfig.shouldPrintReceivedDialogJSON": "Should print received dialog JSON"
 }

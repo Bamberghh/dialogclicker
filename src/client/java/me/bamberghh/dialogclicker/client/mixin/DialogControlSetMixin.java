@@ -1,6 +1,6 @@
 package me.bamberghh.dialogclicker.client.mixin;
 
-import me.bamberghh.dialogclicker.client.DialogControlSetChanges;
+import me.bamberghh.dialogclicker.client.DialogControlSetMixinImpl;
 import me.bamberghh.dialogclicker.client.DialogScreenInterface;
 import net.minecraft.client.gui.screens.dialog.DialogControlSet;
 import net.minecraft.client.gui.screens.dialog.DialogScreen;
@@ -23,6 +23,6 @@ public class DialogControlSetMixin {
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     @Inject(method = "bindAction", at = @At("RETURN"))
     private void bindActionMixin(Optional<Action> maybeAction, CallbackInfoReturnable<Supplier<Optional<ClickEvent>>> cir) {
-        DialogControlSetChanges.INSTANCE.bindActionMixin((DialogScreenInterface) screen, maybeAction, cir.getReturnValue());
+        DialogControlSetMixinImpl.INSTANCE.bindActionMixin((DialogScreenInterface) screen, maybeAction, cir.getReturnValue());
     }
 }

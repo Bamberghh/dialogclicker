@@ -29,15 +29,15 @@ private fun stringTemplateToRegex(stringTemplate: StringTemplate): Regex {
     return Regex(builder.toString())
 }
 
-sealed interface SavedActionKey {
+sealed interface ActionKey {
     fun doesMatchClickEventShallow(clickEvent: ClickEvent): Boolean
     fun doesMatchClickEvent(clickEvent: ClickEvent): String?
 }
 
-data class SavedActionKeyCustomAll(val id: Identifier, val additions: Optional<CompoundTag>): SavedActionKey {
+data class ActionKeyCustomAll(val id: Identifier, val additions: Optional<CompoundTag>): ActionKey {
     companion object {
         fun fromCustomAll(customAll: CustomAll) =
-            SavedActionKeyCustomAll(customAll.id, customAll.additions)
+            ActionKeyCustomAll(customAll.id, customAll.additions)
     }
     override fun doesMatchClickEventShallow(clickEvent: ClickEvent): Boolean {
         return clickEvent is ClickEvent.Custom
@@ -59,10 +59,10 @@ data class SavedActionKeyCustomAll(val id: Identifier, val additions: Optional<C
     }
 }
 
-data class SavedActionKeyCommandTemplate(val template: Regex): SavedActionKey {
+data class ActionKeyCommandTemplate(val template: Regex): ActionKey {
     companion object {
         fun fromCommandTemplate(commandTemplate: CommandTemplate) =
-            SavedActionKeyCommandTemplate(stringTemplateToRegex(commandTemplate.template.parsed))
+            ActionKeyCommandTemplate(stringTemplateToRegex(commandTemplate.template.parsed))
     }
     override fun doesMatchClickEventShallow(clickEvent: ClickEvent): Boolean {
         return clickEvent is ClickEvent.RunCommand
@@ -74,10 +74,10 @@ data class SavedActionKeyCommandTemplate(val template: Regex): SavedActionKey {
     }
 }
 
-data class SavedActionKeyStaticAction(val clickEvent: ClickEvent): SavedActionKey {
+data class ActionKeyStaticAction(val clickEvent: ClickEvent): ActionKey {
     companion object {
         fun fromStaticAction(staticAction: StaticAction) =
-            SavedActionKeyStaticAction(staticAction.value)
+            ActionKeyStaticAction(staticAction.value)
     }
     override fun doesMatchClickEventShallow(clickEvent: ClickEvent): Boolean {
         return clickEvent.javaClass.isInstance(this.clickEvent)

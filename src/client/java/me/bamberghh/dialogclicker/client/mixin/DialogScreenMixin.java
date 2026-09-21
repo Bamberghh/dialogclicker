@@ -1,8 +1,8 @@
 package me.bamberghh.dialogclicker.client.mixin;
 
-import me.bamberghh.dialogclicker.client.DialogScreenChanges;
+import me.bamberghh.dialogclicker.client.DialogScreenMixinImpl;
 import me.bamberghh.dialogclicker.client.DialogScreenInterface;
-import me.bamberghh.dialogclicker.client.SavedActionKey;
+import me.bamberghh.dialogclicker.client.ActionKey;
 import net.minecraft.client.gui.layouts.LayoutElement;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.dialog.DialogConnectionAccess;
@@ -24,45 +24,45 @@ import java.util.Optional;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 @Mixin(DialogScreen.class)
-public abstract class DialogScreenMixin<T extends Dialog> extends Screen implements DialogScreenInterface {
-	@Unique private final DialogScreenChanges changes = new DialogScreenChanges((DialogScreen<?>) (Object) this);
+public abstract class DialogScreenMixin extends Screen implements DialogScreenInterface {
+	@Unique private final DialogScreenMixinImpl impl = new DialogScreenMixinImpl((DialogScreen<?>) (Object) this);
 
 	protected DialogScreenMixin(Component title) {
 		super(title);
 	}
 
 	@Override
-	public @NonNull List<SavedActionKey> dialogclicker_getSavedActionKeys() {
-		return changes.getSavedActionKeys();
-	}
-
-	@Inject(method = "createTitleWithWarningButton", at = @At("RETURN"), cancellable = true)
-	private void createTitleWithWarningButtonRETURN(CallbackInfoReturnable<LayoutElement> cir) {
-		changes.createTitleWithWarningButtonRETURN(cir);
+	public @NonNull List<ActionKey> dialogclicker_getCurrentActionKeys() {
+		return impl.getCurrentActionKeys();
 	}
 
 	@Inject(method = "<init>", at = @At("RETURN"))
 	private void constructorRETURN(Screen previousScreen, Dialog dialog, DialogConnectionAccess connectionAccess, CallbackInfo ci) {
-		changes.constructorRETURN(previousScreen, dialog, connectionAccess, ci);
+		impl.constructorRETURN(previousScreen, dialog, connectionAccess, ci);
 	}
 
-	@Inject(method = "init", at = @At("HEAD"))
-	private void initHEAD(CallbackInfo ci) {
-		changes.initHEAD(ci);
-	}
+    @Inject(method = "init", at = @At("HEAD"))
+    private void initHEAD(CallbackInfo ci) {
+        impl.initHEAD(ci);
+    }
 
-	@Inject(method = "init", at = @At("RETURN"))
-	private void initRETURN(CallbackInfo ci) {
-		changes.initRETURN(ci);
-	}
+    @Inject(method = "init", at = @At("RETURN"))
+    private void initRETURN(CallbackInfo ci) {
+        impl.initRETURN(ci);
+    }
 
 	@Inject(method = "repositionElements", at = @At("HEAD"))
 	private void repositionElementsHEAD(CallbackInfo ci) {
-		changes.repositionElementsHEAD(ci);
+		impl.repositionElementsHEAD(ci);
+	}
+
+	@Inject(method = "createTitleWithWarningButton", at = @At("RETURN"), cancellable = true)
+	private void createTitleWithWarningButtonRETURN(CallbackInfoReturnable<LayoutElement> cir) {
+		impl.createTitleWithWarningButtonRETURN(cir);
 	}
 
 	@Inject(method = "runAction(Ljava/util/Optional;Lnet/minecraft/server/dialog/DialogAction;)V", at = @At("HEAD"))
 	private void runActionHEAD(@SuppressWarnings("OptionalUsedAsFieldOrParameterType") Optional<ClickEvent> closeAction, DialogAction afterAction, CallbackInfo ci) {
-		changes.runActionHEAD(closeAction, afterAction, ci);
+		impl.runActionHEAD(closeAction, afterAction, ci);
 	}
 }

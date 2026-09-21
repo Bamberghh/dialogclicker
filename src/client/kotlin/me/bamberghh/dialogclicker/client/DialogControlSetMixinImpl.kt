@@ -7,7 +7,7 @@ import net.minecraft.server.dialog.action.CustomAll
 import java.util.*
 import java.util.function.Supplier
 
-object DialogControlSetChanges {
+object DialogControlSetMixinImpl {
     fun bindActionMixin(
         dialogScreenInterface: DialogScreenInterface,
         maybeAction: Optional<Action>,
@@ -17,17 +17,17 @@ object DialogControlSetChanges {
             return
         }
         val key = when (val action = maybeAction.get()) {
-            is CustomAll -> SavedActionKeyCustomAll.fromCustomAll(action)
-            is CommandTemplate -> SavedActionKeyCommandTemplate.fromCommandTemplate(action)
+            is CustomAll -> ActionKeyCustomAll.fromCustomAll(action)
+            is CommandTemplate -> ActionKeyCommandTemplate.fromCommandTemplate(action)
             else -> {
                 val maybeClickEvent = clickEventSupplier.get()
                 if (maybeClickEvent.isEmpty) {
                     return
                 }
                 val clickEvent = maybeClickEvent.get()
-                SavedActionKeyStaticAction(clickEvent)
+                ActionKeyStaticAction(clickEvent)
             }
         }
-        dialogScreenInterface.dialogclicker_getSavedActionKeys().add(key)
+        dialogScreenInterface.dialogclicker_getCurrentActionKeys().add(key)
     }
 }
