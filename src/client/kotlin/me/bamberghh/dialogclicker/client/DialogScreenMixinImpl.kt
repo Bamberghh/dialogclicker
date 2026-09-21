@@ -193,6 +193,10 @@ class DialogScreenMixinImpl(val self: DialogScreen<*>) {
     fun initRETURN(@Suppress("unused") ci: CallbackInfo) {
         // Not in the constructor because in case of closing the dialog, its
         // screen immediately gets set after the constructor in the call stack
+        // Also the currentActionKeys need to be initialized
+
+        // In case of a non-closing dialog action, the same dialog gets initialized twice when applying actions
+        (self as ScreenAccessor).dialogclicker_setInitialized(true)
         if (shouldCheckPrevActions()) {
             shouldCheckPrevActions = false
             checkPrevActions()

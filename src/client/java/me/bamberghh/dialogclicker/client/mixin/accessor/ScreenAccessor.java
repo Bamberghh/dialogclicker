@@ -11,6 +11,8 @@ import org.spongepowered.asm.mixin.gen.Invoker;
 public interface ScreenAccessor {
     @Accessor("minecraft")
     Minecraft dialogclicker_getMinecraft();
+    @Accessor("initialized")
+    void dialogclicker_setInitialized(boolean value);
     @Invoker("rebuildWidgets")
     void dialogclicker_rebuildWidgets();
     @Invoker("repositionElements")
