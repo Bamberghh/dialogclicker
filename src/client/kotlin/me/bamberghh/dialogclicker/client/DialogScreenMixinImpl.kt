@@ -257,13 +257,6 @@ class DialogScreenMixinImpl(val self: DialogScreen<*>) {
         headerLayout.addChild(rightLayout)
         this.headerLayout = headerLayout
 
-        (self as ScreenAccessor).dialogclicker_addRenderableOnly(
-            ColoredWidgetWrapper(
-                headerLayout,
-                colorAlpha = 0xFF / 4,
-            )
-        )
-
         cir.setReturnValue(headerLayout)
     }
 

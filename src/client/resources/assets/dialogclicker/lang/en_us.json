@@ -14,6 +14,12 @@
   "dialogclicker.midnightconfig.shouldApplyPrevActions.tooltip": "Will the mod apply (perform) actions that you saved in dialogs. Disable this if for example you want to erase actions for a closing dialog.",
 
   "dialogclicker.midnightconfig.category.debug": "Debug",
+  "dialogclicker.midnightconfig.shouldLog": "Should log",
+  "dialogclicker.midnightconfig.shouldLog.tooltip": "General logging toggle, including errors (!). Don't recommend turning off.",
+  "dialogclicker.midnightconfig.shouldLogActionSaving": "Should log action saving",
+  "dialogclicker.midnightconfig.shouldLogActionSaving.tooltip": "Should the mod log actions being saved.",
+  "dialogclicker.midnightconfig.shouldLogActionLoading": "Should log action loading",
+  "dialogclicker.midnightconfig.shouldLogActionLoading.tooltip": "Should the mod log actions being loaded.",
   "dialogclicker.midnightconfig.shouldLogReceivedDialogSNBT": "Should log received dialog SNBT",
   "dialogclicker.midnightconfig.shouldLogReceivedDialogSNBT.tooltip": "Should the mod log SNBT of dialogs received from the server or world. Helpful for debug.",
   "dialogclicker.midnightconfig.shouldLogReceivedDialogJSON": "Should log received dialog JSON",

@@ -3,6 +3,7 @@ package me.bamberghh.dialogclicker.client
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import me.bamberghh.dialogclicker.DialogClicker
+import me.bamberghh.dialogclicker.config.DialogClickerConfig
 import me.bamberghh.dialogclicker.mapPairListListCodec
 import net.fabricmc.api.ClientModInitializer
 import net.minecraft.client.Minecraft
@@ -119,13 +120,17 @@ object DialogClickerClient : ClientModInitializer {
 				actionValuesForType.remove(key)
 			}
 		}
-		DialogClicker.LOGGER.info("Actions for dialog {} saved: {}", externalTitle, actionValues)
+		if (DialogClickerConfig.shouldLogActionSaving) {
+			DialogClicker.LOGGER.info("Actions for dialog {} saved: {}", externalTitle, actionValues)
+		}
 		actionValuesRoot!!.save(modDirectory!!, actionsFile!!)
 	}
 
 	fun loadActions(minecraft: Minecraft, externalTitle: Component): List<ActionValue> {
 		val actionValues = getDialogActionValues(minecraft)?.get(externalTitle) ?: return listOf()
-		DialogClicker.LOGGER.info("Actions for dialog {} loaded: {}", externalTitle, actionValues)
+		if (DialogClickerConfig.shouldLogActionLoading) {
+			DialogClicker.LOGGER.info("Actions for dialog {} loaded: {}", externalTitle, actionValues)
+		}
 		return actionValues
 	}
 }
