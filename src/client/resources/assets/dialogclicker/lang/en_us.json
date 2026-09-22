@@ -6,8 +6,16 @@
   "dialogclicker.menu.error.outdated_saved_actions": "Saved actions are outdated",
 
   "dialogclicker.midnightconfig.title": "Dialog Clicker Config",
+
+  "dialogclicker.midnightconfig.category.general": "General",
   "dialogclicker.midnightconfig.isModEnabled": "Is mod enabled",
+  "dialogclicker.midnightconfig.isModEnabled.tooltip": "General mod toggle.",
   "dialogclicker.midnightconfig.shouldApplyPrevActions": "Should apply saved actions",
-  "dialogclicker.midnightconfig.shouldPrintReceivedDialogSNBT": "Should print received dialog SNBT",
-  "dialogclicker.midnightconfig.shouldPrintReceivedDialogJSON": "Should print received dialog JSON"
+  "dialogclicker.midnightconfig.shouldApplyPrevActions.tooltip": "Will the mod apply (perform) actions that you saved in dialogs. Disable this if for example you want to erase actions for a closing dialog.",
+
+  "dialogclicker.midnightconfig.category.debug": "Debug",
+  "dialogclicker.midnightconfig.shouldLogReceivedDialogSNBT": "Should log received dialog SNBT",
+  "dialogclicker.midnightconfig.shouldLogReceivedDialogSNBT.tooltip": "Should the mod log SNBT of dialogs received from the server or world. Helpful for debug.",
+  "dialogclicker.midnightconfig.shouldLogReceivedDialogJSON": "Should log received dialog JSON",
+  "dialogclicker.midnightconfig.shouldLogReceivedDialogJSON.tooltip": "Should the mod log JSON of dialogs received from the server or world. Helpful for debug."
 }

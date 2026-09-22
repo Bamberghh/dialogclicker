@@ -3,11 +3,11 @@
   "package": "me.bamberghh.dialogclicker.client.mixin",
   "compatibilityLevel": "JAVA_25",
   "client": [
+    "accessor.ScreenAccessor",
+    "accessor.DialogScreenAccessor",
     "ClientCommonPacketListenerImplMixin",
     "DialogControlSetMixin",
-    "DialogScreenMixin",
-    "accessor.ScreenAccessor",
-    "accessor.DialogScreenAccessor"
+    "DialogScreenMixin"
   ],
   "injectors": {
     "defaultRequire": 1

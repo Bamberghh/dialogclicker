@@ -22,7 +22,7 @@ public class ClientCommonPacketListenerImplMixin {
         if (!DialogClickerConfig.isModEnabled) {
             return;
         }
-        if (DialogClickerConfig.shouldPrintReceivedDialogSNBT) {
+        if (DialogClickerConfig.shouldLogReceivedDialogSNBT) {
             final var tagResult = Dialog.CODEC.encodeStart(NbtOps.INSTANCE, dialog);
             if (tagResult.result().isEmpty()) {
                 return;
@@ -30,7 +30,7 @@ public class ClientCommonPacketListenerImplMixin {
             final var tag = tagResult.result().get();
             DialogClicker.LOGGER.info("Received dialog SNBT: {}", tag);
         }
-        if (DialogClickerConfig.shouldPrintReceivedDialogJSON) {
+        if (DialogClickerConfig.shouldLogReceivedDialogJSON) {
             final var tagResult = Dialog.CODEC.encodeStart(JsonOps.INSTANCE, dialog);
             if (tagResult.result().isEmpty()) {
                 return;
