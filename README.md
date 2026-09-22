@@ -22,9 +22,13 @@ If you made a mistake you can press the "Erase actions" button to erase the perf
 
 ⚠️ If you've saved a closing action in a dialog, and you want to erase it, you won't be able to simply press the "Erase actions" button because the dialog immediately gets closed by the mod. To resolve this you can disable the "Should apply saved actions" option in the mod config, erase the saved actions and re-enable the config option.
 
+![Dialog Screen](docs/assets/dialog_screen_hl.png)
+
 ### Configuration
 
 The entire mod is configured through the Mod Menu UI with helpful tooltips. Below is a short description of every option currently there:
+
+![Config Screen](docs/assets/config_screen.png)
 
 ### Should apply saved actions
 
