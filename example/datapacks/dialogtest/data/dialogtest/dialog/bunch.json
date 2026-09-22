@@ -1,0 +1,99 @@
+{
+    "type": "minecraft:multi_action",
+    "title": "Bunch of actions",
+    "inputs": [
+        {
+            "type": "boolean",
+            "key": "boolean",
+            "label": "boolean"
+        }
+    ],
+    "pause": false,
+    "after_action": "none",
+    "columns": 1,
+    "actions": [
+        {
+            "label": "open_url",
+            "width": 310,
+            "action": {
+                "type": "open_url",
+                "url": "https://example.com"
+            }
+        },
+        {
+            "label": "run_command",
+            "width": 310,
+            "action": {
+                "type": "run_command",
+                "command": "say a"
+            }
+        },
+        {
+            "label": "suggest_command",
+            "width": 310,
+            "action": {
+                "type": "suggest_command",
+                "command": "say a"
+            }
+        },
+        {
+            "label": "change_page",
+            "width": 310,
+            "action": {
+                "type": "change_page",
+                "page": 1
+            }
+        },
+        {
+            "label": "copy_to_clipboard",
+            "width": 310,
+            "action": {
+                "type": "copy_to_clipboard",
+                "value": "copy_to_clipboard"
+            }
+        },
+        {
+            "label": "show_dialog",
+            "width": 310,
+            "action": {
+                "type": "show_dialog",
+                "dialog": "dialogtest:bunch"
+            }
+        },
+        {
+            "label": "custom",
+            "width": 310,
+            "action": {
+                "type": "custom",
+                "id": "dialogtest:custom",
+                "payload": {
+                    "a": 2
+                }
+            }
+        },
+        {
+            "label": "dynamic/run_command",
+            "width": 310,
+            "action": {
+                "type": "dynamic/run_command",
+                "template": "say $(boolean)"
+            }
+        },
+        {
+            "label": "dynamic/custom",
+            "width": 310,
+            "action": {
+                "type": "dynamic/custom",
+                "id": "dialogtest:dynamic/custom",
+                "additions": {
+                }
+            }
+        }
+    ],
+    "exit_action": {
+        "label": {
+            "translate": "gui.back"
+        },
+        "width": 200
+    }
+}

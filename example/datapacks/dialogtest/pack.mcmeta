@@ -1,0 +1,9 @@
+{
+    "pack": {
+        "description": "Dialog test. To open a dialog, click it in the pause menu or run `/dialog show @p dialogtest:bunch` command.",
+        "pack_format": 999,
+        "supported_formats": [80, 999],
+        "min_format": 80,
+        "max_format": 999
+    }
+}
