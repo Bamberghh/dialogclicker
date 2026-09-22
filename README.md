@@ -47,3 +47,7 @@ Control which messages should be logged:
 ## I have a problem/suggestion/translation
 
 [Please open an issue on GitHub](https://github.com/Bamberghh/dialogclicker/issues/new).
+
+## Example datapack for testing the mod
+
+[dialogtest](example/datapacks/dialogtest)
